@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pretraining Data Curation Playbook</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Georgia', serif; background: #0f0f0f; color: #e0e0e0; line-height: 1.8; padding: 40px 20px; }
+  .container { max-width: 820px; margin: 0 auto; }
+  h1 { font-size: 2.2em; color: #f5c542; border-bottom: 3px solid #f5c542; padding-bottom: 12px; margin-bottom: 8px; font-family: 'Helvetica Neue', sans-serif; }
+  .subtitle { color: #999; font-size: 0.95em; margin-bottom: 40px; font-style: italic; }
+  h2 { font-size: 1.5em; color: #4fc3f7; margin-top: 50px; margin-bottom: 16px; font-family: 'Helvetica Neue', sans-serif; border-left: 4px solid #4fc3f7; padding-left: 14px; }
+  h3 { font-size: 1.15em; color: #81c784; margin-top: 28px; margin-bottom: 10px; }
+  p { margin-bottom: 14px; }
+  .highlight { background: #f5c54233; color: #f5c542; padding: 2px 6px; border-radius: 3px; font-weight: bold; }
+  .framework-box { background: #1a1a2e; border: 2px solid #4fc3f7; border-radius: 12px; padding: 24px; margin: 24px 0; }
+  .framework-box ol { padding-left: 20px; }
+  .framework-box li { margin-bottom: 10px; }
+  .framework-box li strong { color: #f5c542; }
+  .rule-box { background: #2d1b00; border-left: 4px solid #f5c542; padding: 14px 18px; margin: 16px 0; border-radius: 0 8px 8px 0; font-style: italic; }
+  .section { background: #1a1a1a; border-radius: 12px; padding: 28px; margin: 30px 0; border: 1px solid #2a2a2a; }
+  .section:hover { border-color: #4fc3f7; transition: border-color 0.3s; }
+  .key-point { background: #1b2a1b; border-left: 4px solid #81c784; padding: 12px 16px; margin: 14px 0; border-radius: 0 8px 8px 0; }
+  .warning { background: #2a1b1b; border-left: 4px solid #e57373; padding: 12px 16px; margin: 14px 0; border-radius: 0 8px 8px 0; }
+  .takeaway { background: #1b1b2a; border-left: 4px solid #9575cd; padding: 12px 16px; margin: 14px 0; border-radius: 0 8px 8px 0; }
+  .takeaway::before { content: "Interview Takeaway: "; color: #9575cd; font-weight: bold; }
+  table { width: 100%; border-collapse: collapse; margin: 16px 0; }
+  th { background: #2a2a2a; color: #4fc3f7; text-align: left; padding: 10px 14px; font-size: 0.9em; }
+  td { padding: 10px 14px; border-bottom: 1px solid #2a2a2a; font-size: 0.9em; }
+  tr:hover td { background: #1a1a2e; }
+  code { background: #2a2a2a; color: #f5c542; padding: 2px 6px; border-radius: 3px; font-size: 0.9em; }
+  .formula { background: #1a1a2e; border: 1px solid #4fc3f7; border-radius: 8px; padding: 14px 18px; margin: 14px 0; font-family: 'Courier New', monospace; color: #4fc3f7; text-align: center; font-size: 1.1em; }
+  .theme-box { background: linear-gradient(135deg, #1a1a2e, #2d1b00); border: 2px solid #f5c542; border-radius: 12px; padding: 24px; margin: 30px 0; }
+  .theme-box h3 { color: #f5c542; }
+  .theme-box ol { padding-left: 20px; }
+  .theme-box li { margin-bottom: 8px; }
+  .badge { display: inline-block; background: #4fc3f7; color: #0f0f0f; padding: 2px 10px; border-radius: 12px; font-size: 0.75em; font-weight: bold; margin-left: 8px; vertical-align: middle; }
+  .num { color: #f5c542; font-weight: bold; font-size: 1.1em; }
+  hr { border: none; border-top: 1px solid #2a2a2a; margin: 40px 0; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>Pretraining Data Curation Playbook</h1>
+<p class="subtitle">Complete Reference Guide &mdash; Based on FineWeb (HuggingFace)</p>
+
+<!-- FRAMEWORK -->
+<div class="framework-box">
+<h3 style="color:#4fc3f7; margin-top:0;">Note-Taking Framework (Use For Any Paper/Article)</h3>
+<p>Every section you study should go through these 6 steps:</p>
+<ol>
+  <li><strong>Translate</strong> &mdash; Rephrase in plain English. Strip jargon. If you can say it differently, you understood it. If you can't, you didn't.</li>
+  <li><strong>Filter</strong> &mdash; Split into three buckets: must remember (concepts, insights, formulas), nice to know (specific numbers, names), and skip (implementation details, tool names, citations).</li>
+  <li><strong>Connect</strong> &mdash; Link to something you already know. Connections turn isolated facts into a web that's harder to forget.</li>
+  <li><strong>Visualize</strong> &mdash; What doodle would make this click? If you can't draw it, you probably don't understand it well enough.</li>
+  <li><strong>Interview Flip</strong> &mdash; If an interviewer asked about this, what's the one sentence that sounds smart? Extract the "so what."</li>
+  <li><strong>Anti-note</strong> &mdash; What should you NOT write? If everything goes in your notes, nothing stands out.</li>
+</ol>
+<div class="rule-box">The rule: If your notes look exactly like the source, you wasted your time. Good notes are shorter, simpler, and in your voice.</div>
+</div>
+
+<hr>
+
+<!-- SECTION 1 -->
+<div class="section">
+<h2>1. Where Does Training Data Come From?</h2>
+<p>Two options:</p>
+<p><strong>Option 1:</strong> <span class="highlight">Crawl it yourself</span> &mdash; OpenAI, Anthropic do this with their own crawlers.</p>
+<p><strong>Option 2:</strong> Use public crawl data &mdash; <span class="highlight">CommonCrawl</span> (non-profit, crawling since 2007).</p>
+
+<h3>CommonCrawl Key Numbers</h3>
+<p>One crawl (April 2024) = <span class="num">2.7 billion</span> web pages = <span class="num">386 TiB</span> of HTML</p>
+<p><span class="num">96</span> crawls released since 2013. New crawl every 1&ndash;2 months.</p>
+
+<div class="takeaway">LLMs aren't trained on curated data &mdash; they start with massive, messy web crawls. The real work is in cleaning it up.</div>
+</div>
+
+<!-- SECTION 2 -->
+<div class="section">
+<h2>2. What Is "High Quality" Data?</h2>
+<p><span class="highlight">High quality</span> is not well defined in pretraining. Even humans can't always agree. Quality depends on what you're training the model for, not on the text itself.</p>
+
+<h3>Three Methods to Judge Data Quality</h3>
+<table>
+  <tr><th>Method</th><th>How</th><th>Speed</th><th>Cost</th><th>Reliability</th></tr>
+  <tr><td><strong>Perplexity</strong> (Wikipedia)</td><td>Train on Wikipedia, score new data</td><td>Fast</td><td>Cheap</td><td>Low</td></tr>
+  <tr><td><strong>Small model + evals</strong></td><td>Train small models, evaluate on diverse benchmarks</td><td>Medium</td><td>Medium</td><td>Medium</td></tr>
+  <tr><td><strong>Human evaluation</strong></td><td>Humans rank outputs (e.g., LMSYS Arena)</td><td>Slow</td><td>Expensive</td><td>High</td></tr>
+</table>
+
+<div class="warning"><strong>Perplexity flaw:</strong> Biases toward formal/encyclopedic text, filters out useful informal content.</div>
+<div class="warning"><strong>Small model warning:</strong> Don't overfit to one benchmark &mdash; pick diverse evals.</div>
+<div class="warning"><strong>Human eval problem:</strong> Requires instruction finetuning first, adding noise.</div>
+
+<div class="takeaway">There's no perfect way to evaluate data quality &mdash; each method trades off cost vs reliability.</div>
+</div>
+
+<!-- SECTION 3 -->
+<div class="section">
+<h2>3. Ablation Methodology</h2>
+<p><span class="highlight">Ablation</span> = remove one step and compare results. Change only ONE thing, keep everything else identical, measure the difference.</p>
+
+<div class="key-point">Train two identical models (same size, architecture, tokens, one epoch). Only difference = the training data. Compare eval scores. If scores improve &rarr; the step helped.</div>
+
+<h3>Ablation Model Setup</h3>
+<p>1.82B parameters, Llama architecture, GPT2 tokenizer. Trained on ~<span class="num">28B tokens</span> (<span class="highlight">Chinchilla optimal</span> for this model size).</p>
+
+<div class="key-point"><strong>Chinchilla Optimal:</strong> DeepMind (2022) &mdash; for a given compute budget, optimal ratio is ~20 tokens per parameter. Before: huge models, too little data. After: scale data proportionally.</div>
+
+<h3>How to Pick Good Eval Benchmarks (3 Criteria)</h3>
+<p><strong>1. Low variance</strong> &mdash; stable signal across data resamplings</p>
+<p><strong>2. Monotonically increasing</strong> &mdash; score goes up as training progresses</p>
+<p><strong>3. Above random</strong> &mdash; meaningfully above chance</p>
+
+<p><strong>Key benchmarks:</strong> <span class="highlight">MMLU</span> (57 subjects) and <span class="highlight">HellaSwag</span> (commonsense) come up most in interviews.</p>
+</div>
+
+<!-- SECTION 4 -->
+<div class="section">
+<h2>4. Text Extraction</h2>
+<p>CommonCrawl has two formats:</p>
+<p><span class="highlight">WARC</span> = raw HTML + metadata (the full thing)</p>
+<p><span class="highlight">WET</span> = text already extracted by CommonCrawl (lower quality)</p>
+
+<p>FineWeb used WARC + <span class="highlight">trafilatura</span> library for better extraction.</p>
+
+<h3>Experiment Results</h3>
+<table>
+  <tr><th>Method</th><th>Tokens</th><th>Quality</th></tr>
+  <tr><td>WET (default)</td><td>254B</td><td>Worse &mdash; extra tokens were boilerplate</td></tr>
+  <tr><td>WARC + trafilatura</td><td>200B</td><td>Better &mdash; cleaner extraction</td></tr>
+</table>
+
+<div class="rule-box">More data &ne; better data. Starting from raw HTML gives you more control over quality.</div>
+</div>
+
+<!-- SECTION 5 -->
+<div class="section">
+<h2>5. Base Filtering</h2>
+<p>Three-step filtering (following RefinedWeb):</p>
+<p><strong>1.</strong> <span class="highlight">URL blocklist</span> &rarr; remove adult content</p>
+<p><strong>2.</strong> <span class="highlight">Language filter</span> &rarr; fastText classifier, English only (score &ge; 0.65)</p>
+<p><strong>3.</strong> <span class="highlight">Quality + repetition filters</span> &rarr; from MassiveText (removes gibberish, repeated text)</p>
+
+<p>Raw CommonCrawl &rarr; after base filtering = ~<span class="num">36 trillion tokens</span></p>
+
+<div class="takeaway">Every major LLM dataset follows this same structure: remove harmful &rarr; filter language &rarr; remove low quality/repetitive. The specifics differ but the pipeline is universal.</div>
+</div>
+
+<!-- SECTION 6 -->
+<div class="section">
+<h2>6. Deduplication</h2>
+
+<h3>Why Deduplicate?</h3>
+<p>The web has mirrors, aggregators, templated pages, and crawler artifacts. Removing duplicates: improves model performance, reduces <span class="highlight">memorization</span> (better generalization), and increases training efficiency (same compute, more diverse data).</p>
+
+<h3>Two Approaches</h3>
+<p><strong>Exact dedup</strong> &mdash; identical matches</p>
+<p><strong>Fuzzy dedup</strong> &mdash; similarity-based (close enough)</p>
+
+<h3>MinHash (What FineWeb Used)</h3>
+<p>Break documents into <span class="highlight">5-grams</span>. Compute <span class="num">112</span> hash functions. Split into <span class="num">14 buckets &times; 8 hashes</span>. If two docs share all 8 hashes in ANY bucket &rarr; duplicate. Target: &ge; 75% similar.</p>
+
+<div class="formula">P = 1 &minus; (1 &minus; s&sup8;)&sup1;&sup4;</div>
+
+<table>
+  <tr><th>Similarity</th><th>Catch Probability</th></tr>
+  <tr><td>70%</td><td>56%</td></tr>
+  <tr><td>75%</td><td>77%</td></tr>
+  <tr><td>80%</td><td>92%</td></tr>
+  <tr><td>85%</td><td>98.8%</td></tr>
+</table>
+</div>
+
+<!-- SECTION 7 -->
+<div class="section">
+<h2>7. The Deduplication Trap</h2>
+<div class="warning"><strong>Assumption:</strong> More dedup = always better. <strong>WRONG.</strong></div>
+
+<h3>What They Tried (Cross-Dump Dedup)</h3>
+<p>Dedup ALL 90+ dumps together chronologically. Oldest dumps lost &gt;90% of data. Result: 36T &rarr; <span class="num">4T tokens</span>.</p>
+<p><strong>Surprise:</strong> Model showed almost no improvement over non-deduped data.</p>
+
+<h3>The Deep Dive (Dump 2013-48)</h3>
+<p>The 10% "kept" data was actually <strong>WORSE</strong> than the 90% removed data. Kept data = ads, keyword spam, bad formatting.</p>
+
+<div class="key-point">
+<strong>Key Insight: <span class="highlight">Uniqueness &ne; Quality</span></strong><br>
+Good content gets duplicated across the web (popular articles, Wikipedia mirrors). Garbage is often unique (random spam). Cross-dump dedup kept unique garbage and removed common good content.
+</div>
+
+<h3>The Fix: Individual Dump Dedup</h3>
+<p>Dedup each dump independently. Result: <span class="num">20T tokens</span>. Performance: matched RefinedWeb.</p>
+
+<div class="takeaway">Aggressive deduplication can backfire because high-quality content tends to be replicated across the web, while low-quality spam is often unique.</div>
+</div>
+
+<!-- SECTION 8 -->
+<div class="section">
+<h2>8. Learning From C4's Filters</h2>
+<p><span class="highlight">C4</span> (2019, ~175B tokens) &mdash; still competitive despite age. Used in Llama1.</p>
+
+<h3>Key Finding</h3>
+<p><strong>Terminal punctuation filter</strong> = biggest individual boost BUT removes <span class="num">30%</span> of data (too destructive).</p>
+<p><strong>All other filters combined</strong> = better performance, only <span class="num">~7%</span> removed.</p>
+<p><strong>Decision:</strong> Use all C4 filters EXCEPT terminal punctuation.</p>
+
+<div class="takeaway">The most aggressive filter isn't always the best. C4 from 2019 is still competitive in 2024, proving filtering quality matters more than data freshness.</div>
+</div>
+
+<!-- SECTION 9 -->
+<div class="section">
+<h2>9. Systematic Filter Development</h2>
+<h3>4-Step Process</h3>
+<p><strong>1.</strong> Compute 50+ metrics on high-quality vs low-quality data</p>
+<p><strong>2.</strong> Find metrics with biggest distribution gap (<span class="highlight">Wasserstein distance</span>)</p>
+<p><strong>3.</strong> Pick threshold from histogram inspection</p>
+<p><strong>4.</strong> Validate with ablation runs</p>
+
+<h3>3 Winning Filters</h3>
+<table>
+  <tr><th>Filter</th><th>Threshold</th><th>Data Removed</th></tr>
+  <tr><td>Lines ending with punctuation</td><td>&le; 0.12 &rarr; remove</td><td>10%</td></tr>
+  <tr><td>Duplicate line characters</td><td>&ge; 0.1 &rarr; remove</td><td>12.5%</td></tr>
+  <tr><td>Short lines (&lt;30 chars)</td><td>&ge; 0.67 &rarr; remove</td><td>3.7%</td></tr>
+</table>
+<p>All three combined: ~<span class="num">22%</span> removed &rarr; <strong>surpassed C4 performance</strong>.</p>
+
+<div class="takeaway">This 4-step framework is reusable for any data quality problem, not just LLMs. Surgical filtering beats aggressive filtering.</div>
+</div>
+
+<!-- SECTION 10 -->
+<div class="section">
+<h2>10. Final FineWeb Pipeline</h2>
+<p>The complete pipeline, in order:</p>
+<p><strong>1.</strong> Text extraction (WARC + trafilatura)</p>
+<p><strong>2.</strong> Base filtering (URL blocklist, language, quality/repetition)</p>
+<p><strong>3.</strong> Independent MinHash dedup per dump</p>
+<p><strong>4.</strong> C4 filters (except terminal punctuation)</p>
+<p><strong>5.</strong> Custom filters (punctuation ratio, duplicate lines, short lines)</p>
+
+<div class="key-point"><strong>Result: <span class="num">15T tokens</span></strong> &rarr; best performing open web dataset</div>
+
+<h3>Dataset Landscape</h3>
+<table>
+  <tr><th>Dataset</th><th>Tokens</th><th>Notes</th></tr>
+  <tr><td><strong>FineWeb</strong></td><td>15T</td><td>Best open dataset</td></tr>
+  <tr><td>RedPajama2</td><td>20T</td><td>Bigger but lower quality</td></tr>
+  <tr><td>Dolma v1.6</td><td>3T</td><td>Allen AI</td></tr>
+  <tr><td>SlimPajama</td><td>627B</td><td>Cerebras</td></tr>
+  <tr><td>RefinedWeb</td><td>500B</td><td>Falcon team</td></tr>
+  <tr><td>The Pile</td><td>340B</td><td>EleutherAI</td></tr>
+  <tr><td>C4</td><td>172B</td><td>Small but punches above its weight</td></tr>
+</table>
+</div>
+
+<!-- SECTION 11 -->
+<div class="section">
+<h2>11. FineWeb-Edu &mdash; The Educational Quality Layer</h2>
+
+<h3>How They Built It (3 Steps)</h3>
+<p><strong>1. LLM-as-annotator:</strong> Used <span class="highlight">Llama-3-70B</span> to score 500K samples on educational quality (0&ndash;5 scale)</p>
+<p><strong>2. Train cheap classifier:</strong> Snowflake-arctic-embed + regression head, F1 = 82% at threshold 3</p>
+<p><strong>3. Filter at scale:</strong> Run classifier on all 15T tokens &rarr; keep only score &ge; 3</p>
+
+<div class="key-point"><strong>Result:</strong> 92% removed &rarr; <span class="num">1.3T tokens</span> remain &rarr; <strong>outperforms everything</strong></div>
+
+<h3>The Pattern: LLM Distillation for Data Curation</h3>
+<p>LLM annotates small sample (expensive but feasible) &rarr; Train tiny classifier on annotations (cheap) &rarr; Run classifier on everything (fast). Used by <span class="highlight">Llama 3</span> and <span class="highlight">Phi-3</span>. State-of-the-art approach.</p>
+
+<h3>Threshold Tradeoffs</h3>
+<p>Higher threshold (4&ndash;5) &rarr; better on MMLU, ARC but worse on HellaSwag/PIQA</p>
+<p><strong>Threshold 3 = best balance.</strong> Also released threshold 2 version: 5.4T tokens.</p>
+
+<div class="rule-box">They removed 92% of data and performance went UP. Quality &gt;&gt;&gt; Quantity.</div>
+</div>
+
+<!-- SECTION 12 -->
+<div class="section">
+<h2>12. Synthetic Data &amp; CommonCrawl Over Time</h2>
+<p>Not all crawls are equal &mdash; some perform much better, no conclusive explanation.</p>
+
+<h3>Synthetic Data Contamination</h3>
+<p><strong>Proxy detection:</strong> Frequency of ChatGPT-isms (<em>"delve", "rich tapestry", "it's important to note", "certainly!", "dive into"</em>)</p>
+<p>Flat until 2023-14 &rarr; steep increase after ChatGPT release (late 2022).</p>
+<p>At small scale: doesn't seem to hurt (might help). At large scale: unknown.</p>
+
+<div class="warning"><strong>Model Collapse concern:</strong> Training on AI-generated data could degrade future models. Active area of research.</div>
+</div>
+
+<hr>
+
+<!-- THEMES -->
+<div class="theme-box">
+<h3>Recurring Principles</h3>
+<ol>
+  <li><strong>Quality &gt;&gt;&gt; Quantity</strong> &mdash; More data can hurt. 92% removal improved performance.</li>
+  <li><strong>Uniqueness &ne; Quality</strong> &mdash; Good content is duplicated because it's good. Garbage is often unique.</li>
+  <li><strong>Surgical filtering &gt; Aggressive filtering</strong> &mdash; Smart 10% removal beat blunt 30% removal.</li>
+  <li><strong>Validate every step</strong> &mdash; Ablation test each pipeline decision. Don't assume.</li>
+  <li><strong>Small-scale &ne; Large-scale</strong> &mdash; 28B token results don't always hold at 350B+.</li>
+  <li><strong>Data engineering is about balance</strong> &mdash; Every technique has diminishing returns and side effects.</li>
+  <li><strong>LLM distillation for data curation</strong> &mdash; Expensive LLM &rarr; cheap classifier &rarr; scale. State of the art.</li>
+</ol>
+</div>
+
+</div>
+</body>
+</html>

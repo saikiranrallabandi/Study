@@ -1,0 +1,526 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Let's build GPT — lesson notes</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root{--bg:#0B0D10;--panel:#12161B;--ink:#E6EAEE;--dim:#8E9AA6;--line:#232B33;
+        --accent:#5EC8D8;--accent-dim:#12313A;--warn:#E0A458;--act:#B78BE0}
+  *{box-sizing:border-box} html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:"Source Serif 4",Georgia,serif;font-size:17px;line-height:1.65;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1000px;margin:0 auto;padding:56px 22px 120px}
+  header{border-bottom:1px solid var(--line);padding-bottom:30px}
+  .kicker{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.18em;
+    text-transform:uppercase;color:var(--accent);margin-bottom:14px}
+  h1{font-family:"IBM Plex Sans",sans-serif;font-weight:600;font-size:clamp(32px,5vw,48px);
+    line-height:1.05;letter-spacing:-.025em;margin:0 0 14px}
+  .sub{color:var(--dim);font-size:18px;max-width:64ch;margin:0 0 14px}
+  .meta{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--dim);line-height:1.7}
+  .meta a{color:var(--accent);text-decoration:none}
+  nav{margin:32px 0 12px;padding:20px 22px;background:var(--panel);border:1px solid var(--line)}
+  nav h3{font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:.16em;
+    text-transform:uppercase;color:var(--act);margin:16px 0 8px;font-weight:400}
+  nav h3:first-child{margin-top:0}
+  nav ol{margin:0;padding:0;list-style:none;display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:3px 26px}
+  nav li{font-size:14px;display:flex;gap:9px;align-items:baseline}
+  nav .n{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--accent);flex:none;width:1.5em}
+  nav a{color:var(--ink);text-decoration:none;border-bottom:1px solid transparent}
+  nav a:hover{border-bottom-color:var(--accent)}
+  nav .t{font-family:"IBM Plex Mono",monospace;font-size:10.5px;color:var(--dim);margin-left:auto;flex:none}
+  .act{margin:64px 0 8px;padding:18px 22px;border:1px solid var(--act);background:#1A1526}
+  .act .lbl{font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:.16em;
+    text-transform:uppercase;color:var(--act);margin-bottom:8px}
+  .act h2{font-family:"IBM Plex Sans",sans-serif;font-weight:600;font-size:24px;margin:0 0 8px;letter-spacing:-.02em}
+  .act p{margin:0;color:var(--dim);font-size:15.5px;max-width:70ch}
+  section{margin:44px 0 0;scroll-margin-top:20px}
+  .ch{display:flex;align-items:baseline;gap:14px;border-bottom:1px solid var(--line);
+    padding-bottom:11px;margin-bottom:16px}
+  .ch .n{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--accent);flex:none}
+  .ch h2{font-family:"IBM Plex Sans",sans-serif;font-weight:600;font-size:24px;letter-spacing:-.02em;margin:0}
+  .ch .t{font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:var(--dim);margin-left:auto;flex:none}
+  .intro{color:var(--dim);font-size:16px;margin:0 0 22px;max-width:70ch}
+  .step{margin:0 0 34px}
+  .step .lbl{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--accent);
+    letter-spacing:.09em;margin-bottom:9px}
+  .step img{display:block;width:100%;height:auto;border:1px solid var(--line);background:#000}
+  .step p{margin:14px 0 0;max-width:72ch}
+  /* captions:start */
+  .anchor{display:grid;grid-template-columns:minmax(250px,330px) 1fr;gap:18px;
+    align-items:start;margin:14px 0 0}
+  @media(max-width:860px){.anchor{grid-template-columns:1fr}}
+  .said{margin:0;padding:11px 0 11px 16px;border-left:2px solid var(--line);
+    font-family:"IBM Plex Mono",monospace;font-size:12.5px;line-height:1.62;color:var(--dim)}
+  .said .who{display:block;font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--line);margin-bottom:6px}
+  .vid{position:relative;aspect-ratio:16/9;background:#07090B;border:1px solid var(--line);
+    border-radius:2px;display:flex;align-items:center;justify-content:center;cursor:pointer;
+    transition:border-color .15s}
+  .vid:hover{border-color:var(--accent)}
+  .vid iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+  .vid .play{display:flex;flex-direction:column;align-items:center;gap:7px;pointer-events:none}
+  .vid .play svg{width:34px;height:34px;opacity:.8}
+  .vid .play span{font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:.08em;
+    color:var(--dim);text-transform:uppercase}
+  /* captions:end */
+  .step p + p{margin-top:10px}
+  strong{font-weight:600;color:#fff} em{font-style:italic;color:var(--accent)}
+  code{font-family:"IBM Plex Mono",monospace;font-size:.85em;background:var(--panel);padding:.1em .34em}
+  .key{border-left:2px solid var(--accent);background:var(--accent-dim);padding:14px 18px;
+    margin:22px 0 0;font-size:16px;max-width:72ch} .key b{color:#fff}
+  .caution{border-left:2px solid var(--warn);background:#241C10;padding:14px 18px;
+    margin:22px 0;font-size:15.5px;max-width:72ch;color:#E8DCC8}
+  footer{border-top:1px solid var(--line);padding-top:26px;margin-top:64px;
+    color:var(--dim);font-size:14px;max-width:72ch} footer p{margin:0 0 11px}
+</style>
+</head><body><div class="wrap">
+<header><div class="kicker">Full build · 30 chapters · 60 steps</div>
+<h1>Let's build GPT</h1>
+<p class="sub">A decoder-only Transformer written from nothing, in order. Not stages of training — one continuous build, each chapter refactoring the last.</p>
+<div class="meta">Source: Andrej Karpathy, <em>Let's build GPT: from scratch, in code, spelled out.</em> · 1:56:20 · 
+<a href="https://www.youtube.com/watch?v=kCc8FmEb1nY">youtube.com/watch?v=kCc8FmEb1nY</a><br>
+Code: <a href="https://github.com/karpathy/ng-video-lecture">ng-video-lecture</a> · 
+<a href="https://colab.research.google.com/drive/1JMLa53HDuA-i7ZBmqV7ZnA3c_fvtXnx-?usp=sharing">the Colab notebook</a> · 
+<a href="https://github.com/karpathy/nanoGPT">nanoGPT</a><br>
+60 frames kept, held locally for study. Explanations written from the narration, not transcribed.</div>  <div id="embed-note" style="display:none;margin:18px 0 0;padding:12px 16px;background:#241C10;border-left:2px solid var(--warn);font-size:14.5px;color:#E8DCC8;max-width:72ch">Opened from disk, so clicking a player opens YouTube in a new tab at that timestamp — embeds are blocked without a real origin. For inline playback, serve the folder first:<br><code style="display:inline-block;margin-top:7px">python3 -m http.server 8000</code> then open <code>localhost:8000/lesson.html</code></div>
+</header>
+<div class="caution" style="margin-top:26px"><b>Read the code from the repo, not from here.</b> The links above are the real source — this page explains what each step does and why, and deliberately does not reproduce the implementation. That is the better way round anyway: for a build-along video, retyping it yourself is the point.</div>
+<nav>
+<h3>Stage 0 — Setup</h3><ol>
+<li><span class="n">01</span><a href="#c01">intro: ChatGPT, Transformers, nanoGPT</a><span class="t">2:35</span></li>
+<li><span class="n">02</span><a href="#c02">reading and exploring the data</a><span class="t">8:23</span></li>
+<li><span class="n">03</span><a href="#c03">tokenization, train/val split</a><span class="t">11:06</span></li>
+<li><span class="n">04</span><a href="#c04">data loader: batches of chunks</a><span class="t">17:00</span></li>
+</ol>
+<h3>Stage 1 — Baseline</h3><ol>
+<li><span class="n">05</span><a href="#c05">simplest baseline: bigram language model</a><span class="t">26:22</span></li>
+<li><span class="n">06</span><a href="#c06">training the bigram model</a><span class="t">35:54</span></li>
+<li><span class="n">07</span><a href="#c07">port our code to a script</a><span class="t">39:23</span></li>
+</ol>
+<h3>Stage 2 — The mathematical trick</h3><ol>
+<li><span class="n">08</span><a href="#c08">version 1: averaging past context with a loop</a><span class="t">43:51</span></li>
+<li><span class="n">09</span><a href="#c09">the trick: matrix multiply for weighted aggregation</a><span class="t">48:44</span></li>
+<li><span class="n">10</span><a href="#c10">version 2: using matrix multiply</a><span class="t">52:49</span></li>
+<li><span class="n">11</span><a href="#c11">version 3: adding softmax</a><span class="t">55:55</span></li>
+</ol>
+<h3>Stage 3 — Toward attention</h3><ol>
+<li><span class="n">12</span><a href="#c12">minor code cleanup</a><span class="t">59:02</span></li>
+<li><span class="n">13</span><a href="#c13">positional encoding</a><span class="t">1:00:51</span></li>
+<li><span class="n">14</span><a href="#c14">THE CRUX: version 4, self-attention</a><span class="t">1:05:10</span></li>
+</ol>
+<h3>Stage 4 — Six notes on attention</h3><ol>
+<li><span class="n">15</span><a href="#c15">note 1: attention as communication</a><span class="t">1:12:00</span></li>
+<li><span class="n">16</span><a href="#c16">note 2: attention has no notion of space</a><span class="t">1:13:03</span></li>
+<li><span class="n">17</span><a href="#c17">note 3: no communication across batches</a><span class="t">1:13:51</span></li>
+<li><span class="n">18</span><a href="#c18">note 4: encoder vs decoder blocks</a><span class="t">1:14:42</span></li>
+<li><span class="n">19</span><a href="#c19">note 5: self-attention vs cross-attention</a><span class="t">1:16:04</span></li>
+<li><span class="n">20</span><a href="#c20">note 6: why divide by the square root of head size</a><span class="t">1:17:40</span></li>
+</ol>
+<h3>Stage 5 — Assembling the Transformer</h3><ol>
+<li><span class="n">21</span><a href="#c21">inserting a single self-attention block</a><span class="t">1:20:06</span></li>
+<li><span class="n">22</span><a href="#c22">multi-headed self-attention</a><span class="t">1:22:47</span></li>
+<li><span class="n">23</span><a href="#c23">feedforward layers</a><span class="t">1:25:12</span></li>
+<li><span class="n">24</span><a href="#c24">residual connections</a><span class="t">1:28:47</span></li>
+<li><span class="n">25</span><a href="#c25">layernorm</a><span class="t">1:34:29</span></li>
+<li><span class="n">26</span><a href="#c26">scaling up the model</a><span class="t">1:39:24</span></li>
+</ol>
+<h3>Stage 6 — Context</h3><ol>
+<li><span class="n">27</span><a href="#c27">encoder vs decoder vs both</a><span class="t">1:43:52</span></li>
+<li><span class="n">28</span><a href="#c28">walkthrough of nanoGPT</a><span class="t">1:47:11</span></li>
+<li><span class="n">29</span><a href="#c29">back to ChatGPT: pretraining vs finetuning</a><span class="t">1:50:44</span></li>
+<li><span class="n">30</span><a href="#c30">conclusions</a><span class="t">1:55:07</span></li>
+</ol>
+</nav>
+<div class="act"><div class="lbl">Stage 0</div><h2>Setup</h2><p>What we're building, and getting the data into shape.</p></div>
+<section id="c01"><div class="ch"><span class="n">01</span>
+<h2>intro: ChatGPT, Transformers, nanoGPT</h2><span class="t">2:35</span></div>
+<p class="intro">He opens on ChatGPT itself, then names the target: the same architecture, small, from nothing.</p>
+<div class="step"><div class="lbl">2:35</div>
+<div class="anchor"><div class="vid" data-t="155" data-vid="kCc8FmEb1nY"><div class="play"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="10"/><path d="M10 8l6 4-6 4z" fill="currentColor" stroke="none"/></svg><span>watch from 2:35</span></div></div><blockquote class="said"><span class="who">transcript · 2:35</span>generally generatively pre-trained Transformer so Transformer is the neuron nut that actually does all the heavy lifting under the hood it comes from this paper in 2017 now if you read this paper this uh reads like a pretty random machine translation paper and that&#x27;s because I think the authors didn&#x27;t fully anticipate the impact that the Transformer would have on the field and this architecture that they produced in the context of machine translation in</blockquote></div>
+    <img src="frames/ch01a-intro-chatgpt-transformers-nanogpt.jpg" alt="intro: ChatGPT, Transformers, nanoGPT">
+<p><b>ChatGPT is probabilistic</b> — same prompt, different answer. He demonstrates it rather than asserting it, which sets up why sampling matters later.</p></div>
+<div class="step"><div class="lbl">5:39</div>
+<div class="anchor"><div class="vid" data-t="339" data-vid="kCc8FmEb1nY"><div class="play"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="10"/><path d="M10 8l6 4-6 4z" fill="currentColor" stroke="none"/></svg><span>watch from 5:39</span></div></div><blockquote class="said"><span class="who">transcript · 5:39</span>pieces so they&#x27;re not Word level they&#x27;re kind of like word chunk level um and now I&#x27;ve already written this entire code uh to train these Transformers um and it is in a GitHub repository that you can find and it&#x27;s called nanog GPT so nanog GPT is a repository that you can find in my GitHub and it&#x27;s a repository for training Transformers um</blockquote></div>
+    <img src="frames/ch01b-intro-chatgpt-transformers-nanogpt.jpg" alt="intro: ChatGPT, Transformers, nanoGPT">
+<p>The goal stated plainly: implement the architecture behind it, trained on a tiny dataset, in around 200 lines. <b>Not a toy version of something else — the same thing, smaller.</b></p></div>
+</section>
+<section id="c02"><div class="ch"><span class="n">02</span>
+<h2>reading and exploring the data</h2><span class="t">8:23</span></div>
+<p class="intro">Tiny Shakespeare — one megabyte, a million characters.</p>
+<div class="step"><div class="lbl">8:23</div>
+<div class="anchor"><div class="vid" data-t="503" data-vid="kCc8FmEb1nY"><div class="play"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="10"/><path d="M10 8l6 4-6 4z" fill="currentColor" stroke="none"/></svg><span>watch from 8:23</span></div></div><blockquote class="said"><span class="who">transcript · 8:23</span>we are working with 1 million characters roughly and the first 1,000 characters if we just print them out are basically what you would expect this is the first 1,000 characters of the tiny Shakespeare data set roughly up to here so so far so good next we&#x27;re going to take this text and the text is a sequence of characters in Python so when I call the set</blockquote></div>
+    <img src="frames/ch02a-reading-and-exploring-the-data.jpg" alt="reading and exploring the data">
+<p>A deliberately small dataset. Small enough to train on a laptop, large enough that there is something real to learn.</p></div>
+<div class="step"><div class="lbl">9:01</div>
+<div class="anchor"><div class="vid" data-t="541" data-vid="kCc8FmEb1nY"><div class="play"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="10"/><path d="M10 8l6 4-6 4z" fill="currentColor" stroke="none"/></svg><span>watch from 9:01</span></div></div><blockquote class="said"><span class="who">transcript · 9:01</span>just all the characters that occur in the entire data set and they&#x27;re sorted now the number of them is going to be our vocabulary size these are the possible elements of our sequences and we see that when I print here the characters there&#x27;s 65 of them in total there&#x27;s a space character and then all kinds of special characters and then U</blockquote></div>
+    <img src="frames/ch02b-reading-and-exploring-the-data.jpg" alt="reading and exploring the data">
+<p>The vocabulary is <i>derived</i>, not chosen — sort the unique characters and you get <b>65 symbols</b>. That number becomes the model's entire universe.</p></div>
+</section>
+<section id="c03"><div class="ch"><span class="n">03</span>
+<h2>tokenization, train/val split</h2><span class="t">11:06</span></div>
+<p class="intro">The simplest possible tokenizer, and why he picks it.</p>
+<div class="step"><div class="lbl">11:06</div>
+<div class="anchor"><div class="vid" data-t="666" data-vid="kCc8FmEb1nY"><div class="play"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="10"/><path d="M10 8l6 4-6 4z" fill="currentColor" stroke="none"/></svg><span>watch from 11:06</span></div></div><blockquote class="said"><span class="who">transcript · 11:06</span>encode text into um integers but in a different schema and using a different vocabulary and sentence piece is a subword uh sort of tokenizer and what that means is that um you&#x27;re not encoding entire words but you&#x27;re not also encoding individual characters it&#x27;s it&#x27;s a subword unit level and that&#x27;s usually what&#x27;s adopted in practice for</blockquote></div>
+    <img src="frames/ch03a-tokenization-train-val-split.jpg" alt="tokenization, train/val split">
+<p><b>Character-level tokenization</b> — each character maps to an integer and back. An encoder and decoder that are two lookup tables.</p></div>
+<div class="step"><div class="lbl">13:03</div>
+<div class="anchor"><div class="vid" data-t="783" data-vid="kCc8FmEb1nY"><div class="play"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="10"/><path d="M10 8l6 4-6 4z" fill="currentColor" stroke="none"/></svg><span>watch from 13:03</span></div></div><blockquote class="said"><span class="who">transcript · 13:03</span>going to take all of the text in tiny Shakespeare encode it and then wrap it into a torch. tensor to get the data tensor so here&#x27;s what the data tensor looks like when I look at just the first 1,000 characters or the 1,000 elements of it so we see that we have a massive sequence of integers and this sequence of integers here is basically an identical translation of the first</blockquote></div>
+    <img src="frames/ch03b-tokenization-train-val-split.jpg" alt="tokenization, train/val split">
+<p>He flags the tradeoff: real systems use subword schemes giving <b>short sequences and a large vocabulary</b>. Character level is the opposite end of the same dial.</p></div>
+</section>
+<section id="c04"><div class="ch"><span class="n">04</span>
+<h2>data loader: batches of chunks</h2><span class="t">17:00</span></div>
+<p class="intro">Why you never feed the whole text in, and what a training example actually is.</p>
+<div class="step"><div class="lbl">17:00</div>
+<div class="anchor"><div class="vid" data-t="1020" data-vid="kCc8FmEb1nY"><div class="play"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="10"/><path d="M10 8l6 4-6 4z" fill="currentColor" stroke="none"/></svg><span>watch from 17:00</span></div></div><blockquote class="said"><span class="who">transcript · 17:00</span>run this and basically it spells out what I said in words uh these are the eight examples hidden in a chunk of nine characters that we uh sampled from the training set I want to mention one more thing we train on all the eight examples here with context between one all the way up to context of block size and we</blockquote></div>
+    <img src="frames/ch04a-data-loader-batches-of-chunks-of-d.jpg" alt="data loader: batches of chunks">
+<p>Training happens on <b>random chunks</b>, never the full text — the cost would be prohibitive. Chunk length is the block size, also called context length.</p></div>
+<div class="step"><div class="lbl">20:01</div>
+<div class="anchor"><div class="vid" data-t="1201" data-vid="kCc8FmEb1nY"><div class="play"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="10"/><path d="M10 8l6 4-6 4z" fill="currentColor" stroke="none"/></svg><span>watch from 20:01</span></div></div><blockquote class="said"><span class="who">transcript · 20:01</span>first first block size characters starting at I the Y&#x27;s are the offset by one of that so just add plus one and then we&#x27;re going to get those chunks for every one of integers I INX and use a torch. stack to take all those uh uh one-dimensional tensors as we saw here</blockquote></div>
+    <img src="frames/ch04b-data-loader-batches-of-chunks-of-d.jpg" alt="data loader: batches of chunks">
+<p>The detail worth pausing on: a chunk of nine characters contains <b>eight training examples</b>, because every position predicts the next. That packing is why training is efficient at all.</p></div>
+</section>
+<div class="act"><div class="lbl">Stage 1</div><h2>Baseline</h2><p>The simplest model that works, so there is something to improve.</p></div>
+<section id="c05"><div class="ch"><span class="n">05</span>
+<h2>simplest baseline: bigram language model</h2><span class="t">26:22</span></div>
+<p class="intro">Start with something almost too simple to be wrong.</p>
+<div class="step"><div class="lbl">26:22</div>
+<div class="anchor"><div class="vid" data-t="1582" data-vid="kCc8FmEb1nY"><div class="play"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="10"/><path d="M10 8l6 4-6 4z" fill="currentColor" stroke="none"/></svg><span>watch from 26:22</span></div></div><blockquote class="said"><span class="who">transcript · 26:22</span>expects these inputs and basically the issue here is ptor expects if you have multi-dimensional input which we do because we have a b BYT by C tensor then it actually really wants the channels to be the second uh Dimension here so if you um so basically it wants a b by C BYT instead of a b by T by C and so it&#x27;s</blockquote></div>
+    <img src="frames/ch05a-simplest-baseline-bigram-language-.jpg" alt="simplest baseline: bigram language model">
+<p>A <b>bigram model</b>: each token looks up a row in an embedding table, and that row <i>is</i> the prediction. No context beyond the current character.</p></div>
+<div class="step"><div class="lbl">31:19</div>
+<div class="anchor"><div class="vid" data-t="1879" data-vid="kCc8FmEb1nY"><div class="play"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="10"/><path d="M10 8l6 4-6 4z" fill="currentColor" stroke="none"/></svg><span>watch from 31:19</span></div></div><blockquote class="said"><span class="who">transcript · 31:19</span>the current sort of like running stream of integers and this gives us a b BYT + one and then we can return that now one thing here is you see how I&#x27;m calling self of idx which will end up going to the forward function I&#x27;m not providing any Targets So currently this would give an error because targets is uh is uh sort of like not given so targets has to</blockquote></div>
+    <img src="frames/ch05b-simplest-baseline-bigram-language-.jpg" alt="simplest baseline: bigram language model">
+<p>Deliberately the weakest thing that still trains. Everything after this is measured against it.</p></div>
+</section>
+<section id="c06"><div class="ch"><span class="n">06</span>
+<h2>training the bigram model</h2><span class="t">35:54</span></div>
+<p class="intro">The training loop, kept boring on purpose.</p>
+<div class="step"><div class="lbl">35:54</div>
+<div class="anchor"><div class="vid" data-t="2154" data-vid="kCc8FmEb1nY"><div class="play"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="10"/><path d="M10 8l6 4-6 4z" fill="currentColor" stroke="none"/></svg><span>watch from 35:54</span></div></div><blockquote class="said"><span class="who">transcript · 35:54</span>zeroing out all the gradients from the previous step getting the gradients for all the parameters and then using those gradients to up update our parameters so typical training loop as we saw in the make more series so let me now uh run this for say 100 iterations and let&#x27;s see what kind of losses we&#x27;re going to get so we started around</blockquote></div>
+    <img src="frames/ch06a-training-the-bigram-model.jpg" alt="training the bigram model">
+<p>Sample a batch, compute loss, zero gradients, backprop, step. <b>This loop never changes again</b> — only the model between the brackets does.</p></div>
+<div class="step"><div class="lbl">37:07</div>
+<div class="anchor"><div class="vid" data-t="2227" data-vid="kCc8FmEb1nY"><div class="play"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="10"/><path d="M10 8l6 4-6 4z" fill="currentColor" stroke="none"/></svg><span>watch from 37:07</span></div></div><blockquote class="said"><span class="who">transcript · 37:07</span>expecting something a bit more reasonable okay so we&#x27;re down at about 2.5 is let&#x27;s see what we get okay dramatic improvements certainly on what we had here so let me just increase the number of tokens okay so we see that we&#x27;re starting to get something at least like reasonable is</blockquote></div>
+    <img src="frames/ch06b-training-the-bigram-model.jpg" alt="training the bigram model">
+<p>Loss falls and output goes from noise to something with the shape of text. Still nonsense, but structured nonsense.</p></div>
+</section>
+<section id="c07"><div class="ch"><span class="n">07</span>
+<h2>port our code to a script</h2><span class="t">39:23</span></div>
+<p class="intro">Leaving the notebook, and why.</p>
+<div class="step"><div class="lbl">39:23</div>
+<div class="anchor"><div class="vid" data-t="2363" data-vid="kCc8FmEb1nY"><div class="play"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="10"/><path d="M10 8l6 4-6 4z" fill="currentColor" stroke="none"/></svg><span>watch from 39:23</span></div></div><blockquote class="said"><span class="who">transcript · 39:23</span>N an embedding table and it&#x27;s got a weight inside it which stores the uh sort of lookup table so so that would be moved to the GPU so that all the calculations here happen on the GPU and they can be a lot faster and then finally here when I&#x27;m creating the context that feeds in to generate I have to make sure that I create it on the device number two what I introduced is</blockquote></div>
+    <img src="frames/ch07a-port-our-code-to-a-script.jpg" alt="port our code to a script">
+<p>The exploratory mess consolidates into one script with hyperparameters at the top — <b>the form the rest of the build happens in</b>.</p></div>
+<div class="step"><div class="lbl">41:02</div>
+<div class="anchor"><div class="vid" data-t="2462" data-vid="kCc8FmEb1nY"><div class="play"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="10"/><path d="M10 8l6 4-6 4z" fill="currentColor" stroke="none"/></svg><span>watch from 41:02</span></div></div><blockquote class="said"><span class="who">transcript · 41:02</span>good practice to Think Through what mode your neural network is in because some layers will have different Behavior Uh at inference time or training time and there&#x27;s also this context manager torch up nograd and this is just telling pytorch that everything that happens inside this function we will not call do backward on and so pytorch can be a lot</blockquote></div>
+    <img src="frames/ch07b-port-our-code-to-a-script.jpg" alt="port our code to a script">
+<p>Two additions: GPU support, and an averaged loss estimate so the number you watch is less noisy than a single batch.</p></div>
+</section>
+<div class="act"><div class="lbl">Stage 2</div><h2>The mathematical trick</h2><p>Four versions of one operation, each faster than the last. The part people skip and shouldn't.</p></div>
+<section id="c08"><div class="ch"><span class="n">08</span>
+<h2>version 1: averaging past context with a loop</h2><span class="t">43:51</span></div>
+<p class="intro">The goal, stated inefficiently first.</p>
+<div class="step"><div class="lbl">43:51</div>
+<div class="anchor"><div class="vid" data-t="2631" data-vid="kCc8FmEb1nY"><div class="play"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="10"/><path d="M10 8l6 4-6 4z" fill="currentColor" stroke="none"/></svg><span>watch from 43:51</span></div></div><blockquote class="said"><span class="who">transcript · 43:51</span>tokens to communicate okay the easiest way I would say is okay if we&#x27;re up to if we&#x27;re a fifth token and I&#x27;d like to communicate with my past the simplest way we can do that is to just do a weight is to just do an average of all the um of all the preceding elements so for example if I&#x27;m the fif token I would like to take the channels uh that make</blockquote></div>
+    <img src="frames/ch08a-version-1-averaging-past-context-w.jpg" alt="version 1: averaging past context with a loop">
+<p>The requirement: a token may see <b>itself and everything before it, never ahead</b>. Information flows one direction only.</p></div>
+<div class="step"><div class="lbl">45:47</div>
+<div class="anchor"><div class="vid" data-t="2747" data-vid="kCc8FmEb1nY"><div class="play"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="10"/><path d="M10 8l6 4-6 4z" fill="currentColor" stroke="none"/></svg><span>watch from 45:47</span></div></div><blockquote class="said"><span class="who">transcript · 45:47</span>Dimension and then everything up to and including the teeth token okay so when we slice out X in this way X prev Becomes of shape um how many T elements there were in the past and then of course C so all the two-dimensional information from these little tokens so</blockquote></div>
+    <img src="frames/ch08b-version-1-averaging-past-context-w.jpg" alt="version 1: averaging past context with a loop">
+<p>Version 1 does it with nested loops. Correct, obvious, hopelessly slow. <b>He writes the slow version first on purpose.</b></p></div>
+</section>
+<section id="c09"><div class="ch"><span class="n">09</span>
+<h2>the trick: matrix multiply for weighted aggregation</h2><span class="t">48:44</span></div>
+<p class="intro">The insight the whole video turns on.</p>
+<div class="step"><div class="lbl">48:44</div>
+<div class="anchor"><div class="vid" data-t="2924" data-vid="kCc8FmEb1nY"><div class="play"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="10"/><path d="M10 8l6 4-6 4z" fill="currentColor" stroke="none"/></svg><span>watch from 48:44</span></div></div><blockquote class="said"><span class="who">transcript · 48:44</span>following this is just a boring number of um it&#x27;s just a boring array of all ones but torch has this function called Trail which is short for a triangular uh something like that and you can wrap it in torch up once and it will just return the lower triangular portion of this</blockquote></div>
+    <img src="frames/ch09a-the-trick-in-self-attention-matrix.jpg" alt="the trick: matrix multiply for weighted aggregation">
+<p>A lower-triangular matrix of ones, multiplied against your data, <b>computes exactly that running sum</b> — the loop, as one operation.</p></div>
+<div class="step"><div class="lbl">50:34</div>
+<div class="anchor"><div class="vid" data-t="3034" data-vid="kCc8FmEb1nY"><div class="play"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="10"/><path d="M10 8l6 4-6 4z" fill="currentColor" stroke="none"/></svg><span>watch from 50:34</span></div></div><blockquote class="said"><span class="who">transcript · 50:34</span>of B uh sort of in an incremental fashion because we don&#x27;t have to we can basically normalize these rows so that they sum to one and then we&#x27;re going to get an average so if we took a and then we did aals aide torch. sum in the um of a in the um oneth Dimension and then let&#x27;s keep them</blockquote></div>
+    <img src="frames/ch09b-the-trick-in-self-attention-matrix.jpg" alt="the trick: matrix multiply for weighted aggregation">
+<p>Normalise the rows to sum to one and the sum becomes an average. <b>The mask and the weighting are the same object.</b></p></div>
+</section>
+<section id="c10"><div class="ch"><span class="n">10</span>
+<h2>version 2: using matrix multiply</h2><span class="t">52:49</span></div>
+<p class="intro">The loop, deleted.</p>
+<div class="step"><div class="lbl">52:49</div>
+<div class="anchor"><div class="vid" data-t="3169" data-vid="kCc8FmEb1nY"><div class="play"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="10"/><path d="M10 8l6 4-6 4z" fill="currentColor" stroke="none"/></svg><span>watch from 52:49</span></div></div><blockquote class="said"><span class="who">transcript · 52:49</span>C and it&#x27;s giving us uh different what shape so pytorch will come here and it will see that these shapes are not the same so it will create a batch Dimension here and this is a batched matrix multiply and so it will apply this matrix multiplication in all the batch elements um in parallel and individually</blockquote></div>
+    <img src="frames/ch10a-version-2-using-matrix-multiply.jpg" alt="version 2: using matrix multiply">
+<p>Version 2 replaces the loops with one batched matrix multiply and asserts the results are identical. <b>Same numbers, vastly faster.</b></p></div>
+<div class="step"><div class="lbl">53:54</div>
+<div class="anchor"><div class="vid" data-t="3234" data-vid="kCc8FmEb1nY"><div class="play"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="10"/><path d="M10 8l6 4-6 4z" fill="currentColor" stroke="none"/></svg><span>watch from 53:54</span></div></div><blockquote class="said"><span class="who">transcript · 53:54</span>just stare it down but um well let me try Expo basically just at the zeroth element and Expo two at the zeroth element so just the first batch and we should see that this and that should be identical which they are right so what happened here the trick is we were able to use batched Matrix multiply to do this uh</blockquote></div>
+    <img src="frames/ch10b-version-2-using-matrix-multiply.jpg" alt="version 2: using matrix multiply">
+<p>The multiply broadcasts across the batch dimension automatically, so one expression handles every example in parallel.</p></div>
+</section>
+<section id="c11"><div class="ch"><span class="n">11</span>
+<h2>version 3: adding softmax</h2><span class="t">55:55</span></div>
+<p class="intro">The version that looks redundant and isn&#x27;t.</p>
+<div class="step"><div class="lbl">55:55</div>
+<div class="anchor"><div class="vid" data-t="3355" data-vid="kCc8FmEb1nY"><div class="play"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="10"/><path d="M10 8l6 4-6 4z" fill="currentColor" stroke="none"/></svg><span>watch from 55:55</span></div></div><blockquote class="said"><span class="who">transcript · 55:55</span>normalization operation right and so spoiler alert you get the exact same Matrix let me bring back to softmax and recall that in softmax we&#x27;re going to exponentiate every single one of these and then we&#x27;re going to divide by the sum and so if we exponentiate every single element here we&#x27;re going to get a one and here we&#x27;re going to get uh</blockquote></div>
+    <img src="frames/ch11a-version-3-adding-softmax.jpg" alt="version 3: adding softmax">
+<p>A third route to the same result: start from zeros, set the future to negative infinity, softmax. <b>Identical output.</b></p></div>
+<div class="step"><div class="lbl">57:23</div>
+<div class="anchor"><div class="vid" data-t="3443" data-vid="kCc8FmEb1nY"><div class="play"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="10"/><path d="M10 8l6 4-6 4z" fill="currentColor" stroke="none"/></svg><span>watch from 57:23</span></div></div><blockquote class="said"><span class="who">transcript · 57:23</span>zeros are currently just set by us to be zero but a quick preview is that these affinities between the tokens are not going to be just constant at zero they&#x27;re going to be data dependent these tokens are going to start looking at each other and some tokens will find other tokens more or less interesting and depending on what their values are they&#x27;re going to find each other interesting to different amounts and I&#x27;m</blockquote></div>
+    <img src="frames/ch11b-version-3-adding-softmax.jpg" alt="version 3: adding softmax">
+<p>Why bother — because those zeros need not stay zero. <b>Make them learned affinities and you have attention.</b> This version exists to leave that door open.</p></div>
+</section>
+<div class="act"><div class="lbl">Stage 3</div><h2>Toward attention</h2><p>Two small additions, then the centre of the video.</p></div>
+<section id="c12"><div class="ch"><span class="n">12</span>
+<h2>minor code cleanup</h2><span class="t">59:02</span></div>
+<p class="intro">Adding indirection so there is room to grow.</p>
+<div class="step"><div class="lbl">59:02</div>
+<div class="anchor"><div class="vid" data-t="3542" data-vid="kCc8FmEb1nY"><div class="play"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="10"/><path d="M10 8l6 4-6 4z" fill="currentColor" stroke="none"/></svg><span>watch from 59:02</span></div></div><blockquote class="said"><span class="who">transcript · 59:02</span>embed it shorted for number of embedding Dimensions so nbed here will be say 32 that was a suggestion from GitHub co-pilot by the way um it also suest 32 which is a good number so this is an embedding table and only 32 dimensional embeddings so then here this is not</blockquote></div>
+    <img src="frames/ch12a-minor-code-cleanup.jpg" alt="minor code cleanup">
+<p>The embedding stops producing predictions directly. It produces an <b>intermediate representation</b>, and a linear layer turns that into predictions.</p></div>
+<div class="step"><div class="lbl">59:46</div>
+<div class="anchor"><div class="vid" data-t="3586" data-vid="kCc8FmEb1nY"><div class="play"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="10"/><path d="M10 8l6 4-6 4z" fill="currentColor" stroke="none"/></svg><span>watch from 59:46</span></div></div><blockquote class="said"><span class="who">transcript · 59:46</span>exactly what the co-pilot says now we have to be careful here because this C and this C are not equal um this is nmed C and this is vocap size so let&#x27;s just say that n ined is equal to C and then this just creates one spous layer of interaction through a linear layer but uh this should basically</blockquote></div>
+    <img src="frames/ch12b-minor-code-cleanup.jpg" alt="minor code cleanup">
+<p>Nothing improves yet. The point is that the middle now has a width you can expand — every later addition lives in that gap.</p></div>
+</section>
+<section id="c13"><div class="ch"><span class="n">13</span>
+<h2>positional encoding</h2><span class="t">1:00:51</span></div>
+<p class="intro">Giving tokens a sense of where they are.</p>
+<div class="step"><div class="lbl">1:00:51</div>
+<div class="anchor"><div class="vid" data-t="3651" data-vid="kCc8FmEb1nY"><div class="play"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="10"/><path d="M10 8l6 4-6 4z" fill="currentColor" stroke="none"/></svg><span>watch from 1:00:51</span></div></div><blockquote class="said"><span class="who">transcript · 1:00:51</span>embedding vector and then here first let me decode B BYT from idx do shape and then here we&#x27;re also going to have a pause embedding which is the positional embedding and these are this is to arrange so this will be basically just integers from Z to T minus one and all of those integers from 0 to T minus one get embedded through the table to</blockquote></div>
+    <img src="frames/ch13a-positional-encoding.jpg" alt="positional encoding">
+<p>A second embedding table indexed by <b>position</b> rather than identity, added to the token embedding.</p></div>
+<div class="step"><div class="lbl">1:01:31</div>
+<div class="anchor"><div class="vid" data-t="3691" data-vid="kCc8FmEb1nY"><div class="play"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="10"/><path d="M10 8l6 4-6 4z" fill="currentColor" stroke="none"/></svg><span>watch from 1:01:31</span></div></div><blockquote class="said"><span class="who">transcript · 1:01:31</span>of one gets added and it gets broadcasted across batch so at this point x holds not just the token identities but the positions at which these tokens occur and this is currently not that useful because of course we just have a simple byr model so it doesn&#x27;t matter if you&#x27;re in the fifth position the second position or wherever it&#x27;s all translation invariant at this stage uh so this information</blockquote></div>
+    <img src="frames/ch13b-positional-encoding.jpg" alt="positional encoding">
+<p>He notes it is useless right now — a bigram model doesn't care about position. <b>It is laid in early because attention will need it.</b></p></div>
+</section>
+<section id="c14"><div class="ch"><span class="n">14</span>
+<h2>THE CRUX: version 4, self-attention</h2><span class="t">1:05:10</span></div>
+<p class="intro">His title, not mine.</p>
+<div class="step"><div class="lbl">1:05:10</div>
+<div class="anchor"><div class="vid" data-t="3910" data-vid="kCc8FmEb1nY"><div class="play"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="10"/><path d="M10 8l6 4-6 4z" fill="currentColor" stroke="none"/></svg><span>watch from 1:05:10</span></div></div><blockquote class="said"><span class="who">transcript · 1:05:10</span>attention so this is just one head there&#x27;s a hyper parameter involved with these heads which is the head size and then here I&#x27;m initializing linear modules and I&#x27;m using bias equals false so these are just going to apply a matrix multiply with some fixed weights and now let me produce a key and q k and Q by forwarding these modules on</blockquote></div>
+    <img src="frames/ch14a-the-crux-of-the-video-version-4-se.jpg" alt="THE CRUX: version 4, self-attention">
+<p>Every token emits a <b>query</b> (what am I looking for) and a <b>key</b> (what do I contain). Their dot product is the affinity between two positions.</p></div>
+<div class="step"><div class="lbl">1:08:56</div>
+<div class="anchor"><div class="vid" data-t="4136" data-vid="kCc8FmEb1nY"><div class="play"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="10"/><path d="M10 8l6 4-6 4z" fill="currentColor" stroke="none"/></svg><span>watch from 1:08:56</span></div></div><blockquote class="said"><span class="who">transcript · 1:08:56</span>after this has already happened um let me erase this operation as well so let me erase the masking and the softmax just to show you the under the hood internals and how that works so without the masking in the softmax Whey comes out like this right this is the outputs of the do products um and these are the</blockquote></div>
+    <img src="frames/ch14b-the-crux-of-the-video-version-4-se.jpg" alt="THE CRUX: version 4, self-attention">
+<p>Those affinities replace the uniform weights of version 3. <b>The averaging becomes data-dependent</b> — a token pulls from whichever past tokens are relevant to it, not all of them equally.</p></div>
+</section>
+<div class="act"><div class="lbl">Stage 4</div><h2>Six notes on attention</h2><p>Short chapters, each correcting a likely misconception. Dense, and worth slowing down for.</p></div>
+<section id="c15"><div class="ch"><span class="n">15</span>
+<h2>note 1: attention as communication</h2><span class="t">1:12:00</span></div>
+<p class="intro">The framing that generalises it.</p>
+<div class="step"><div class="lbl">1:12:00</div>
+<div class="anchor"><div class="vid" data-t="4320" data-vid="kCc8FmEb1nY"><div class="play"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="10"/><path d="M10 8l6 4-6 4z" fill="currentColor" stroke="none"/></svg><span>watch from 1:12:00</span></div></div><blockquote class="said"><span class="who">transcript · 1:12:00</span>some Vector of information and it gets to aggregate information via a weighted sum from all of the nodes that point to it and this is done in a data dependent manner so depending on whatever data is actually stored that you should not at any point in time now our graph doesn&#x27;t look like this our graph has a different structure we have eight nodes because the block size is eight and there&#x27;s</blockquote></div>
+    <img src="frames/ch15a-note-1-attention-as-communication.jpg" alt="note 1: attention as communication">
+<p><b>Attention is a communication mechanism on a directed graph.</b> Each node aggregates a weighted sum from the nodes pointing at it.</p></div>
+<div class="step"><div class="lbl">1:12:26</div>
+<div class="anchor"><div class="vid" data-t="4346" data-vid="kCc8FmEb1nY"><div class="play"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="10"/><path d="M10 8l6 4-6 4z" fill="currentColor" stroke="none"/></svg><span>watch from 1:12:26</span></div></div><blockquote class="said"><span class="who">transcript · 1:12:26</span>pointed to by itself the second node is pointed to by the first node and itself all the way up to the eighth node which is pointed to by all the previous nodes and itself and so that&#x27;s the structure that our directed graph has or happens happens to have in Auto regressive sort of scenario like language modeling but in principle attention can be applied to any arbitrary directed graph and it&#x27;s</blockquote></div>
+    <img src="frames/ch15b-note-1-attention-as-communication.jpg" alt="note 1: attention as communication">
+<p>Language modelling gives one particular graph — each position sees itself and everything earlier. <b>The mechanism is not specific to language.</b></p></div>
+</section>
+<section id="c16"><div class="ch"><span class="n">16</span>
+<h2>note 2: attention has no notion of space</h2><span class="t">1:13:03</span></div>
+<p class="intro">Why positional encoding was necessary.</p>
+<div class="step"><div class="lbl">1:13:03</div>
+<div class="anchor"><div class="vid" data-t="4383" data-vid="kCc8FmEb1nY"><div class="play"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="10"/><path d="M10 8l6 4-6 4z" fill="currentColor" stroke="none"/></svg><span>watch from 1:13:03</span></div></div><blockquote class="said"><span class="who">transcript · 1:13:03</span>we need to encode them positionally and sort of give them some information that is anchored to a specific position so that they sort of know where they are and this is different than for example from convolution because if you&#x27;re run for example a convolution operation over some input there&#x27;s a very specific sort of layout of the information in space and the convolutional filters sort of act in space and so it&#x27;s it&#x27;s not like</blockquote></div>
+    <img src="frames/ch16a-note-2-attention-has-no-notion-of-.jpg" alt="note 2: attention has no notion of space">
+<p>Attention operates on an <b>unordered set of vectors</b>. It has no built-in idea of sequence.</p></div>
+<div class="step"><div class="lbl">1:13:24</div>
+<div class="anchor"><div class="vid" data-t="4404" data-vid="kCc8FmEb1nY"><div class="play"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="10"/><path d="M10 8l6 4-6 4z" fill="currentColor" stroke="none"/></svg><span>watch from 1:13:24</span></div></div><blockquote class="said"><span class="who">transcript · 1:13:24</span>act in space and so it&#x27;s it&#x27;s not like an attention in ATT ention is just a set of vectors out there in space they communicate and if you want them to have a notion of space you need to specifically add it which is what we&#x27;ve done when we calculated the um relative the positional encode encodings and added that information to the vectors the next thing that I hope is very clear is that the elements across the batch</blockquote></div>
+    <img src="frames/ch16b-note-2-attention-has-no-notion-of-.jpg" alt="note 2: attention has no notion of space">
+<p>Contrast convolution, where spatial layout is baked in. <b>If you want position, you must add it</b> — which is what chapter 13 did.</p></div>
+</section>
+<section id="c17"><div class="ch"><span class="n">17</span>
+<h2>note 3: no communication across batches</h2><span class="t">1:13:51</span></div>
+<p class="intro">A clarification that prevents a common confusion.</p>
+<div class="step"><div class="lbl">1:13:51</div>
+<div class="anchor"><div class="vid" data-t="4431" data-vid="kCc8FmEb1nY"><div class="play"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="10"/><path d="M10 8l6 4-6 4z" fill="currentColor" stroke="none"/></svg><span>watch from 1:13:51</span></div></div><blockquote class="said"><span class="who">transcript · 1:13:51</span>processed independently and this is a batched matrix multiply that applies basically a matrix multiplication uh kind of in parallel across the batch dimension so maybe it would be more accurate to say that in this analogy of a directed graph we really have because the back size is four we really have four separate pools of eight nodes and those eight nodes only talk to each other but in total there&#x27;s like 32 nodes that are being processed uh but there&#x27;s</blockquote></div>
+    <img src="frames/ch17a-note-3-there-is-no-communication-a.jpg" alt="note 3: no communication across batches">
+<p>Examples in a batch <b>never see each other</b>. The batched multiply runs many independent graphs in parallel, not one large one.</p></div>
+<div class="step"><div class="lbl">1:14:04</div>
+<div class="anchor"><div class="vid" data-t="4444" data-vid="kCc8FmEb1nY"><div class="play"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="10"/><path d="M10 8l6 4-6 4z" fill="currentColor" stroke="none"/></svg><span>watch from 1:14:04</span></div></div><blockquote class="said"><span class="who">transcript · 1:14:04</span>the back size is four we really have four separate pools of eight nodes and those eight nodes only talk to each other but in total there&#x27;s like 32 nodes that are being processed uh but there&#x27;s um sort of four separate pools of eight you can look at it that way the next note is that here in the case of language modeling uh we have this specific uh structure of directed graph</blockquote></div>
+    <img src="frames/ch17b-note-3-there-is-no-communication-a.jpg" alt="note 3: no communication across batches">
+<p>With a batch of four and a block of eight, that is four separate pools of eight nodes — thirty-two nodes processed, no edges between the pools.</p></div>
+</section>
+<section id="c18"><div class="ch"><span class="n">18</span>
+<h2>note 4: encoder vs decoder blocks</h2><span class="t">1:14:42</span></div>
+<p class="intro">One line of code separates them.</p>
+<div class="step"><div class="lbl">1:14:42</div>
+<div class="anchor"><div class="vid" data-t="4482" data-vid="kCc8FmEb1nY"><div class="play"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="10"/><path d="M10 8l6 4-6 4z" fill="currentColor" stroke="none"/></svg><span>watch from 1:14:42</span></div></div><blockquote class="said"><span class="who">transcript · 1:14:42</span>that with a Transformer you might have a number of tokens and you may want to have them all talk to each other fully because later you are predicting for example the sentiment of the sentence and so it&#x27;s okay for these NOS to talk to each other and so in those cases you will use an encoder block of self attention and uh all it means that it&#x27;s an encoder block is that you will delete</blockquote></div>
+    <img src="frames/ch18a-note-4-encoder-blocks-vs-decoder-b.jpg" alt="note 4: encoder vs decoder blocks">
+<p>Delete the masking line and every node talks to every other — an <b>encoder</b> block, appropriate when classifying a whole sequence.</p></div>
+<div class="step"><div class="lbl">1:15:15</div>
+<div class="anchor"><div class="vid" data-t="4515" data-vid="kCc8FmEb1nY"><div class="play"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="10"/><path d="M10 8l6 4-6 4z" fill="currentColor" stroke="none"/></svg><span>watch from 1:15:15</span></div></div><blockquote class="said"><span class="who">transcript · 1:15:15</span>decoding language and it&#x27;s got this autor regressive format where you have to mask with the Triangular Matrix so that uh nodes from the future never talk to the Past because they would give away the answer and so basically in encoder blocks you would delete this allow all the noes to talk in decoder blocks this will always be present so that you have this</blockquote></div>
+    <img src="frames/ch18b-note-4-encoder-blocks-vs-decoder-b.jpg" alt="note 4: encoder vs decoder blocks">
+<p>Keep the mask and it is a <b>decoder</b> block, which generation requires. <b>The entire distinction is whether the future is hidden.</b></p></div>
+</section>
+<section id="c19"><div class="ch"><span class="n">19</span>
+<h2>note 5: self-attention vs cross-attention</h2><span class="t">1:16:04</span></div>
+<p class="intro">Where keys and values come from.</p>
+<div class="step"><div class="lbl">1:16:04</div>
+<div class="anchor"><div class="vid" data-t="4564" data-vid="kCc8FmEb1nY"><div class="play"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="10"/><path d="M10 8l6 4-6 4z" fill="currentColor" stroke="none"/></svg><span>watch from 1:16:04</span></div></div><blockquote class="said"><span class="who">transcript · 1:16:04</span>the same Source X produces Keys queries and values so these nodes are self attending but in principle attention is much more General than that so for example an encoder decoder Transformers uh you can have a case where the queries are produced from X but the keys and the values come from a whole separate external source and sometimes from uh encoder blocks that encode some context</blockquote></div>
+    <img src="frames/ch19a-note-5-attention-vs-self-attention.jpg" alt="note 5: self-attention vs cross-attention">
+<p><b>Self</b>-attention: queries, keys and values all derive from the same source.</p></div>
+<div class="step"><div class="lbl">1:16:34</div>
+<div class="anchor"><div class="vid" data-t="4594" data-vid="kCc8FmEb1nY"><div class="play"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="10"/><path d="M10 8l6 4-6 4z" fill="currentColor" stroke="none"/></svg><span>watch from 1:16:34</span></div></div><blockquote class="said"><span class="who">transcript · 1:16:34</span>here we&#x27;re just producing queries and we&#x27;re reading off information from the side so cross attention is used when there&#x27;s a separate source of nodes we&#x27;d like to pull information from into our nodes and it&#x27;s self attention if we just have nodes that would like to look at each other and talk to each other so this attention here happens to be self attention but in principle um attention</blockquote></div>
+    <img src="frames/ch19b-note-5-attention-vs-self-attention.jpg" alt="note 5: self-attention vs cross-attention">
+<p><b>Cross</b>-attention: keys and values come from somewhere else entirely — a separate encoder carrying context to condition on.</p></div>
+</section>
+<section id="c20"><div class="ch"><span class="n">20</span>
+<h2>note 6: why divide by the square root of head size</h2><span class="t">1:17:40</span></div>
+<p class="intro">The scaling term, justified rather than stated.</p>
+<div class="step"><div class="lbl">1:17:40</div>
+<div class="anchor"><div class="vid" data-t="4660" data-vid="kCc8FmEb1nY"><div class="play"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="10"/><path d="M10 8l6 4-6 4z" fill="currentColor" stroke="none"/></svg><span>watch from 1:17:40</span></div></div><blockquote class="said"><span class="who">transcript · 1:17:40</span>actually will be uh the variance will be on the order of head size which in our case is 16 but if you multiply by one over head size square root so this is square root and this is one over then the variance of we will be one so it will be preserved now why is this important you&#x27;ll not notice that way here will feed into</blockquote></div>
+    <img src="frames/ch20a-note-6-scaled-self-attention-why-d.jpg" alt="note 6: why divide by the square root of head size">
+<p>Without it, affinity variance grows with head size. After softmax, large values give a <b>peaked distribution</b> — each token attending to essentially one other.</p></div>
+<div class="step"><div class="lbl">1:18:33</div>
+<div class="anchor"><div class="vid" data-t="4713" data-vid="kCc8FmEb1nY"><div class="play"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="10"/><path d="M10 8l6 4-6 4z" fill="currentColor" stroke="none"/></svg><span>watch from 1:18:33</span></div></div><blockquote class="said"><span class="who">transcript · 1:18:33</span>to a tensor of values that are very close to zero then we&#x27;re going to get a diffuse thing out of softmax but the moment I take the exact same thing and I start sharpening it making it bigger by multiplying these numbers by eight for example you&#x27;ll see that the softmax will start to sharpen and in fact it will sharpen towards the max so it will sharpen towards whatever number here is the highest and so um</blockquote></div>
+    <img src="frames/ch20b-note-6-scaled-self-attention-why-d.jpg" alt="note 6: why divide by the square root of head size">
+<p>Dividing keeps variance at one, so attention starts <b>diffuse and learns to sharpen</b>. It matters most at initialisation.</p></div>
+</section>
+<div class="act"><div class="lbl">Stage 5</div><h2>Assembling the Transformer</h2><p>Everything from here is composition — no new mathematics.</p></div>
+<section id="c21"><div class="ch"><span class="n">21</span>
+<h2>inserting a single self-attention block</h2><span class="t">1:20:06</span></div>
+<p class="intro">From notebook experiment to a real module.</p>
+<div class="step"><div class="lbl">1:20:06</div>
+<div class="anchor"><div class="vid" data-t="4806" data-vid="kCc8FmEb1nY"><div class="play"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="10"/><path d="M10 8l6 4-6 4z" fill="currentColor" stroke="none"/></svg><span>watch from 1:20:06</span></div></div><blockquote class="said"><span class="who">transcript · 1:20:06</span>we&#x27;re using scaled attention here then we make sure that uh future doesn&#x27;t communicate with the past so this makes it a decoder block and then softmax and then aggregate the value and output then here in the language model I&#x27;m creating a head in the Constructor and I&#x27;m calling it self attention head and the head size I&#x27;m going to keep as</blockquote></div>
+    <img src="frames/ch21a-inserting-a-single-self-attention-.jpg" alt="inserting a single self-attention block">
+<p>The head becomes a module: key, query and value linear layers without biases, and the triangular mask registered as a buffer rather than a parameter.</p></div>
+<div class="step"><div class="lbl">1:21:11</div>
+<div class="anchor"><div class="vid" data-t="4871" data-vid="kCc8FmEb1nY"><div class="play"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="10"/><path d="M10 8l6 4-6 4z" fill="currentColor" stroke="none"/></svg><span>watch from 1:21:11</span></div></div><blockquote class="said"><span class="who">transcript · 1:21:11</span>more than block size then our position embedding table is going to run out of scope because it only has embeddings for up to block size and so therefore I added some uh code here to crop the context that we&#x27;re going to feed into self um so that uh we never pass in more than block siiz elements so those are the changes and let&#x27;s Now train the network okay so I also came up</blockquote></div>
+    <img src="frames/ch21b-inserting-a-single-self-attention-.jpg" alt="inserting a single self-attention block">
+<p>Dropped into the model, loss improves over the bigram baseline. <b>The first evidence any of this was worth it.</b></p></div>
+</section>
+<section id="c22"><div class="ch"><span class="n">22</span>
+<h2>multi-headed self-attention</h2><span class="t">1:22:47</span></div>
+<p class="intro">More heads, in parallel.</p>
+<div class="step"><div class="lbl">1:22:47</div>
+<div class="anchor"><div class="vid" data-t="4967" data-vid="kCc8FmEb1nY"><div class="play"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="10"/><path d="M10 8l6 4-6 4z" fill="currentColor" stroke="none"/></svg><span>watch from 1:22:47</span></div></div><blockquote class="said"><span class="who">transcript · 1:22:47</span>in parallel into a list and simply concatenate all of the outputs and we&#x27;re concatenating over the channel Dimension so the way this looks now is we don&#x27;t have just a single ATT that uh has a hit size of 32 because remember n Ed is 32 instead of having one Communication channel we now have four communication</blockquote></div>
+    <img src="frames/ch22a-multi-headed-self-attention.jpg" alt="multi-headed self-attention">
+<p>Several smaller attention heads run <b>in parallel</b>, outputs concatenated. Multiple communication channels instead of one.</p></div>
+<div class="step"><div class="lbl">1:23:44</div>
+<div class="anchor"><div class="vid" data-t="5024" data-vid="kCc8FmEb1nY"><div class="play"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="10"/><path d="M10 8l6 4-6 4z" fill="currentColor" stroke="none"/></svg><span>watch from 1:23:44</span></div></div><blockquote class="said"><span class="who">transcript · 1:23:44</span>self attention and so then here we just use essay heads self attention heads instead now I actually ran it and uh scrolling down I ran the same thing and then we now get this down to 2.28 roughly and the output is still the generation is still not amazing but clearly the validation loss is improving because we</blockquote></div>
+    <img src="frames/ch22b-multi-headed-self-attention.jpg" alt="multi-headed self-attention">
+<p>The sizing convention: total width stays fixed and splits across heads — four heads over 32 dimensions gives a head size of eight.</p></div>
+</section>
+<section id="c23"><div class="ch"><span class="n">23</span>
+<h2>feedforward layers</h2><span class="t">1:25:12</span></div>
+<p class="intro">Communication, then computation.</p>
+<div class="step"><div class="lbl">1:25:12</div>
+<div class="anchor"><div class="vid" data-t="5112" data-vid="kCc8FmEb1nY"><div class="play"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="10"/><path d="M10 8l6 4-6 4z" fill="currentColor" stroke="none"/></svg><span>watch from 1:25:12</span></div></div><blockquote class="said"><span class="who">transcript · 1:25:12</span>basically in a similar fashion also adding computation into the network and this computation is on a per node level so I&#x27;ve already implemented it and you can see the diff highlighted on the left here when I&#x27;ve added or changed things now before we had the self multi-headed self attention that did the communication but we went way too fast to calculate the logits so the tokens</blockquote></div>
+    <img src="frames/ch23a-feedforward-layers-of-transformer-.jpg" alt="feedforward layers">
+<p>A small per-token network after attention. <b>Attention moves information between tokens; the feedforward layer thinks about what arrived.</b></p></div>
+<div class="step"><div class="lbl">1:26:07</div>
+<div class="anchor"><div class="vid" data-t="5167" data-vid="kCc8FmEb1nY"><div class="play"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="10"/><path d="M10 8l6 4-6 4z" fill="currentColor" stroke="none"/></svg><span>watch from 1:26:07</span></div></div><blockquote class="said"><span class="who">transcript · 1:26:07</span>this is on a per token level all the tokens do this independently so the self attention is the communication and then once they&#x27;ve gathered all the data now they need to think on that data individually and so that&#x27;s what feed forward is doing and that&#x27;s why I&#x27;ve added it here now when I train this the validation LW actually continues to go down now to 2. 24 which is down from</blockquote></div>
+    <img src="frames/ch23b-feedforward-layers-of-transformer-.jpg" alt="feedforward layers">
+<p>Without it, tokens gather and immediately predict, with no step between. The block alternates the two deliberately.</p></div>
+</section>
+<section id="c24"><div class="ch"><span class="n">24</span>
+<h2>residual connections</h2><span class="t">1:28:47</span></div>
+<p class="intro">What makes depth trainable.</p>
+<div class="step"><div class="lbl">1:28:47</div>
+<div class="anchor"><div class="vid" data-t="5327" data-vid="kCc8FmEb1nY"><div class="play"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="10"/><path d="M10 8l6 4-6 4z" fill="currentColor" stroke="none"/></svg><span>watch from 1:28:47</span></div></div><blockquote class="said"><span class="who">transcript · 1:28:47</span>the presidual learning for image recognition from about 2015 uh that introduced the concept now these are basically what it means is you transform data but then you have a skip connection with addition from the previous features now the way I like to visualize it uh that I prefer is the following here the computation happens</blockquote></div>
+    <img src="frames/ch24a-residual-connections.jpg" alt="residual connections">
+<p>A <b>block</b> is attention then feedforward. Stack blocks for depth — but deep networks optimise badly.</p></div>
+<div class="step"><div class="lbl">1:31:09</div>
+<div class="anchor"><div class="vid" data-t="5469" data-vid="kCc8FmEb1nY"><div class="play"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="10"/><path d="M10 8l6 4-6 4z" fill="currentColor" stroke="none"/></svg><span>watch from 1:31:09</span></div></div><blockquote class="said"><span class="who">transcript · 1:31:09</span>of the self tension itself but then we actually want the uh to apply the projection and that&#x27;s the result so the projection is just a linear transformation of the outcome of this layer so that&#x27;s the projection back into the virual pathway and then here in a feet forward it&#x27;s going to be the same same thing I could have a a self doot projection here as well but let me just</blockquote></div>
+    <img src="frames/ch24b-residual-connections.jpg" alt="residual connections">
+<p><b>Residual connections</b> give gradients a clear path back. He adds them exactly when depth starts to hurt, so the reason is visible.</p></div>
+</section>
+<section id="c25"><div class="ch"><span class="n">25</span>
+<h2>layernorm</h2><span class="t">1:34:29</span></div>
+<p class="intro">Normalising rows rather than columns.</p>
+<div class="step"><div class="lbl">1:34:29</div>
+<div class="anchor"><div class="vid" data-t="5669" data-vid="kCc8FmEb1nY"><div class="play"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="10"/><path d="M10 8l6 4-6 4z" fill="currentColor" stroke="none"/></svg><span>watch from 1:34:29</span></div></div><blockquote class="said"><span class="who">transcript · 1:34:29</span>so now the columns are not going to be normalized um but the rows are going to be normalized for every individual example it&#x27;s 100 dimensional Vector is normalized uh in this way and because our computation Now does not span across examples we can delete all of this buffers stuff uh because uh we can always apply this operation and don&#x27;t</blockquote></div>
+    <img src="frames/ch25a-layernorm-and-its-relationship-to-.jpg" alt="layernorm">
+<p>Derived against batch normalisation: batchnorm normalises across the batch, <b>layernorm across each example's own features</b>.</p></div>
+<div class="step"><div class="lbl">1:36:25</div>
+<div class="anchor"><div class="vid" data-t="5785" data-vid="kCc8FmEb1nY"><div class="play"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="10"/><path d="M10 8l6 4-6 4z" fill="currentColor" stroke="none"/></svg><span>watch from 1:36:25</span></div></div><blockquote class="said"><span class="who">transcript · 1:36:25</span>layer Norm is normalizing our features it is uh the normalization here uh happens the mean and the variance are taken over 32 numbers so the batch and the time act as batch Dimensions both of them so this is kind of like a per token um transformation that just normalizes the features and makes them a unit mean</blockquote></div>
+    <img src="frames/ch25b-layernorm-and-its-relationship-to-.jpg" alt="layernorm">
+<p>One deviation from the 2017 paper: modern practice puts the norm <b>before</b> the sublayer, not after. He does it the modern way and says so.</p></div>
+</section>
+<section id="c26"><div class="ch"><span class="n">26</span>
+<h2>scaling up the model</h2><span class="t">1:39:24</span></div>
+<p class="intro">The same architecture, larger, plus dropout.</p>
+<div class="step"><div class="lbl">1:39:24</div>
+<div class="anchor"><div class="vid" data-t="5964" data-vid="kCc8FmEb1nY"><div class="play"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="10"/><path d="M10 8l6 4-6 4z" fill="currentColor" stroke="none"/></svg><span>watch from 1:39:24</span></div></div><blockquote class="said"><span class="who">transcript · 1:39:24</span>way so I would read the paper to get the full detail for now we&#x27;re just going to stay on the level of this is a regularization technique and I added it because I&#x27;m about to scale up the model quite a bit and I was concerned about overfitting so now when we scroll up to the top uh we&#x27;ll see that I changed a number of hyper parameters here about our neural nut so I made the batch size be much larger now it&#x27;s 64 I changed the</blockquote></div>
+    <img src="frames/ch26a-scaling-up-the-model-creating-a-fe.jpg" alt="scaling up the model">
+<p>Layer count, head count and width become variables. <b>Nothing structural changes</b> — the code was already the real thing.</p></div>
+<div class="step"><div class="lbl">1:41:17</div>
+<div class="anchor"><div class="vid" data-t="6077" data-vid="kCc8FmEb1nY"><div class="play"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="10"/><path d="M10 8l6 4-6 4z" fill="currentColor" stroke="none"/></svg><span>watch from 1:41:17</span></div></div><blockquote class="said"><span class="who">transcript · 1:41:17</span>printing some of the Shakespeare here but what I did also is I printed 10,000 characters so a lot more and I wrote them to a file and so here we see some of the outputs so it&#x27;s a lot more recognizable as the input text file so the input text file just for reference looked like this so there&#x27;s always like someone speaking in this manner and uh our predictions now</blockquote></div>
+    <img src="frames/ch26b-scaling-up-the-model-creating-a-fe.jpg" alt="scaling up the model">
+<p><b>Dropout</b> arrives now because a bigger model can overfit. Randomly severing connections during training forces redundancy.</p></div>
+</section>
+<div class="act"><div class="lbl">Stage 6</div><h2>Context</h2><p>Where this sits relative to the paper, to nanoGPT, and to ChatGPT.</p></div>
+<section id="c27"><div class="ch"><span class="n">27</span>
+<h2>encoder vs decoder vs both</h2><span class="t">1:43:52</span></div>
+<p class="intro">Why the famous diagram looks more complicated than what we built.</p>
+<div class="step"><div class="lbl">1:43:52</div>
+<div class="anchor"><div class="vid" data-t="6232" data-vid="kCc8FmEb1nY"><div class="play"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="10"/><path d="M10 8l6 4-6 4z" fill="currentColor" stroke="none"/></svg><span>watch from 1:43:52</span></div></div><blockquote class="said"><span class="who">transcript · 1:43:52</span>that encode say for example French and then it is expecting to decode the translation in English so so you typically these here are special tokens so you are expected to read in this and condition on it and then you start off the generation with a special token called start so this is a special new token um that you introduce and always</blockquote></div>
+    <img src="frames/ch27a-encoder-vs-decoder-vs-both-transfo.jpg" alt="encoder vs decoder vs both">
+<p>We built a <b>decoder-only</b> Transformer — no encoder, no cross-attention. The triangular mask is what makes it a decoder.</p></div>
+<div class="step"><div class="lbl">1:45:19</div>
+<div class="anchor"><div class="vid" data-t="6319" data-vid="kCc8FmEb1nY"><div class="play"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="10"/><path d="M10 8l6 4-6 4z" fill="currentColor" stroke="none"/></svg><span>watch from 1:45:19</span></div></div><blockquote class="said"><span class="who">transcript · 1:45:19</span>decoder which does the uh language modeling there&#x27;s an additional connection here to the outputs of the encoder and that is brought in through a cross attention so the queries are still generated from X but now the keys and the values are coming from the side the keys and the values are coming from the top generated by the nodes that came outside of the de the encoder and those</blockquote></div>
+    <img src="frames/ch27b-encoder-vs-decoder-vs-both-transfo.jpg" alt="encoder vs decoder vs both">
+<p>The original paper needed both halves because it was a translation paper. <b>Unconditioned generation needs one half</b>, which is why modern language models look simpler than the diagram.</p></div>
+</section>
+<section id="c28"><div class="ch"><span class="n">28</span>
+<h2>walkthrough of nanoGPT</h2><span class="t">1:47:11</span></div>
+<p class="intro">The same model, production-shaped.</p>
+<div class="step"><div class="lbl">1:47:11</div>
+<div class="anchor"><div class="vid" data-t="6431" data-vid="kCc8FmEb1nY"><div class="play"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="10"/><path d="M10 8l6 4-6 4z" fill="currentColor" stroke="none"/></svg><span>watch from 1:47:11</span></div></div><blockquote class="said"><span class="who">transcript · 1:47:11</span>first here we have the causal self attention block and all of this should look very very recognizable to you we&#x27;re producing queries Keys values we&#x27;re doing Dot products we&#x27;re masking applying soft Maxs optionally dropping out and here we are pulling the wi the values what is different here is that in our code I have separated out the</blockquote></div>
+    <img src="frames/ch28a-super-quick-walkthrough-of-nanogpt.jpg" alt="walkthrough of nanoGPT">
+<p>Two files: training boilerplate, and the model. <b>The model file is nearly what we just wrote</b> — the complexity lives in checkpointing, schedules and distributed training.</p></div>
+<div class="step"><div class="lbl">1:48:10</div>
+<div class="anchor"><div class="vid" data-t="6490" data-vid="kCc8FmEb1nY"><div class="play"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="10"/><path d="M10 8l6 4-6 4z" fill="currentColor" stroke="none"/></svg><span>watch from 1:48:10</span></div></div><blockquote class="said"><span class="who">transcript · 1:48:10</span>it&#x27;s using the Galu nonlinearity which is defined here except instead of Ru and this is done just because opening I used it and I want to be able to load their checkpoints uh the blocks of the Transformer are identical to communicate in the compute phase as we saw and then the GPT will be identical we have the position encodings token encodings the blocks the layer Norm at the end uh the</blockquote></div>
+    <img src="frames/ch28b-super-quick-walkthrough-of-nanogpt.jpg" alt="walkthrough of nanoGPT">
+<p>One difference he flags: heads batched into a single operation rather than kept as a list. Faster, less readable, identical mathematics.</p></div>
+</section>
+<section id="c29"><div class="ch"><span class="n">29</span>
+<h2>back to ChatGPT: pretraining vs finetuning</h2><span class="t">1:50:44</span></div>
+<p class="intro">What we did, and what we didn&#x27;t.</p>
+<div class="step"><div class="lbl">1:50:44</div>
+<div class="anchor"><div class="vid" data-t="6644" data-vid="kCc8FmEb1nY"><div class="play"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="10"/><path d="M10 8l6 4-6 4z" fill="currentColor" stroke="none"/></svg><span>watch from 1:50:44</span></div></div><blockquote class="said"><span class="who">transcript · 1:50:44</span>65 and the learning rate is similar now when they train this Transformer they trained on 300 billion tokens so again remember ours is about 300,000 so this is uh about a millionfold increase and this number would not be even that large by today&#x27;s standards you&#x27;d be going up uh 1 trillion and above so they are training a</blockquote></div>
+    <img src="frames/ch29a-back-to-chatgpt-gpt-3-pretraining-.jpg" alt="back to ChatGPT: pretraining vs finetuning">
+<p>What we built is a <b>pretraining step in miniature</b> — roughly ten million parameters against a million characters.</p></div>
+<div class="step"><div class="lbl">1:52:57</div>
+<div class="anchor"><div class="vid" data-t="6777" data-vid="kCc8FmEb1nY"><div class="play"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="10"/><path d="M10 8l6 4-6 4z" fill="currentColor" stroke="none"/></svg><span>watch from 1:52:57</span></div></div><blockquote class="said"><span class="who">transcript · 1:52:57</span>of maybe thousands of examples and so they they then fine-tune the model to basically only focus on documents that look like that and so you&#x27;re starting to slowly align it so it&#x27;s going to expect a question at the top and it&#x27;s going to expect to complete the answer and uh these very very large models are very sample efficient during their fine-tuning so this actually somehow</blockquote></div>
+    <img src="frames/ch29b-back-to-chatgpt-gpt-3-pretraining-.jpg" alt="back to ChatGPT: pretraining vs finetuning">
+<p>Reaching an assistant needs a second stage on curated conversations. <b>We built the base model only</b>, and that gap is the whole of alignment.</p></div>
+</section>
+<section id="c30"><div class="ch"><span class="n">30</span>
+<h2>conclusions</h2><span class="t">1:55:07</span></div>
+<p class="intro">What was covered, and what wasn&#x27;t.</p>
+<div class="step"><div class="lbl">1:55:07</div>
+<div class="anchor"><div class="vid" data-t="6907" data-vid="kCc8FmEb1nY"><div class="play"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="10"/><path d="M10 8l6 4-6 4z" fill="currentColor" stroke="none"/></svg><span>watch from 1:55:07</span></div></div><blockquote class="said"><span class="who">transcript · 1:55:07</span>the way as we built it up in addition to this code I&#x27;m going to release the um notebook of course the Google collab and I hope that gave you a sense for how you can train um these models like say gpt3 that will be um architecturally basically identical to what we have but they are somewhere between 10,000 and 1 million times bigger depending on how you count and so</blockquote></div>
+    <img src="frames/ch30a-conclusions.jpg" alt="conclusions">
+<p>A decoder-only Transformer trained on Shakespeare, in roughly 200 lines. <b>Architecturally the same as production models</b>, which are between ten thousand and a million times larger.</p></div>
+<div class="step"><div class="lbl">1:55:49</div>
+<div class="anchor"><div class="vid" data-t="6949" data-vid="kCc8FmEb1nY"><div class="play"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="10"/><path d="M10 8l6 4-6 4z" fill="currentColor" stroke="none"/></svg><span>watch from 1:55:49</span></div></div><blockquote class="said"><span class="who">transcript · 1:55:49</span>anything like that basically anytime you don&#x27;t want something that&#x27;s just a document completer you have to complete further stages of fine tuning which did not cover uh and that could be simple supervised fine tuning or it can be something more fancy like we see in chat jpt where we actually train a reward model and then do rounds of Po to uh align it with respect to the reward model so there&#x27;s a lot more that can be done on top of it I think for now we&#x27;re</blockquote></div>
+    <img src="frames/ch30b-conclusions.jpg" alt="conclusions">
+<p>He is explicit that finetuning and alignment were not covered. <b>What you have is the architecture, not the product.</b></p></div>
+</section>
+<footer><p><b>The build in one line.</b> A loop that averages the past becomes a matrix multiply, becomes a softmax, becomes learned affinities — and that last step is attention. Everything after it is composition: more heads, a feedforward layer, residuals, normalisation, depth.</p>
+<p>60 frames from 30 chapters, held locally. Per-chapter transcripts in <code>transcript/</code> as the audit trail.</p></footer>
+</div><script>
+// YouTube refuses to embed from a file:// origin (error 153). Served over http(s)
+// the player works inline; opened straight off disk we hand off to a new tab.
+const CAN_EMBED = location.protocol === 'http:' || location.protocol === 'https:';
+if (!CAN_EMBED) {
+  document.querySelectorAll('.vid .play span').forEach(s => s.textContent =
+    s.textContent.replace('watch from', 'open at'));
+  const n = document.getElementById('embed-note');
+  if (n) n.style.display = 'block';
+}
+document.querySelectorAll('.vid').forEach(v => v.addEventListener('click', () => {
+  const url = 'https://www.youtube.com/watch?v=' + v.dataset.vid + '&t=' + v.dataset.t + 's';
+  if (!CAN_EMBED) { window.open(url, '_blank', 'noopener'); return; }
+  if (v.querySelector('iframe')) return;
+  document.querySelectorAll('.vid iframe').forEach(f => {
+    const p = f.parentElement; f.remove(); p.innerHTML = p.dataset.play;
+  });
+  v.dataset.play = v.innerHTML;
+  v.innerHTML = '<iframe allow="autoplay; encrypted-media" allowfullscreen src="https://www.youtube.com/embed/'
+    + v.dataset.vid + '?start=' + v.dataset.t + '&autoplay=1&rel=0"></iframe>';
+}));
+</script>
+</body></html>

@@ -1,0 +1,368 @@
+#prepare.py — Python Coding Tricks You Can Use in LeetCode
+
+## 1. Dictionary comprehension + enumerate (O(1) lookup table)
+`stoi = {ch: i for i, ch in enumerate(chars)}`
+Trick: build a value→index map in one line. O(1) lookup instead of O(n) scanning.
+LeetCode use: THE most important pattern.
+  `num_to_idx = {num: i for i, num in enumerate(nums)}`  — #1 Two Sum
+  `char_to_freq = {c: s.count(c) for c in set(s)}`  — #242 Valid Anagram
+  `pos = {val: i for i, val in enumerate(inorder)}`  — #105 Construct Binary Tree
+  Rule: if you’re scanning for something repeatedly, build a dict first.
+
+## 2. Reverse mapping (itos from stoi)
+`itos = {i: ch for ch, i in stoi.items()}`
+Trick: flip a dict’s keys and values in one line.
+LeetCode use:
+  `idx_to_char = {v: k for k, v in char_to_idx.items()}`  — decode problems
+  `reverse_graph = {v: k for k, v in graph.items()}`  — reverse adjacency
+  Also: `dict(zip(values, keys))` does the same thing.
+
+## 3. sorted(list(set(data))) — chain 3 operations
+`chars = sorted(list(set(text)))`
+Trick: deduplicate → list → sort in one line. Three operations chained.
+LeetCode use:
+  `unique_sorted = sorted(set(nums))`  — #217 Contains Duplicate, #349 Intersection
+  `sorted(set(s))`  — unique characters in order
+  `sorted(counter.keys())`  — sorted unique elements
+  Note: `sorted(set(x))` works directly — no need for `list()` in between.
+
+## 4. Slicing for partitioning
+`train_data = data[:int(n*0.9)]`
+`val_data = data[int(n*0.9):]`
+Trick: split array at a computed index. No loops needed.
+LeetCode use:
+  `left, right = nums[:mid], nums[mid:]`  — merge sort (#912)
+  `first_half = s[:len(s)//2]`  — palindrome check (#125)
+  `arr[i:i+k]`  — sliding window of size k (#643)
+  `nums[-k:]`  — last k elements (#189 Rotate Array)
+
+## 5. List comprehension as map (transform in one line)
+`encoded = [stoi[c] for c in s]`
+`decoded = ‘’.join([itos[i] for i in nums])`
+Trick: transform every element without writing a for loop.
+LeetCode use:
+  `[x * 2 for x in nums]`  — double every element
+  `[int(c) for c in str(num)]`  — split number into digits (#258)
+  `’’.join([c.lower() for c in s if c.isalnum()])`  — #125 Valid Palindrome (clean + lowercase)
+  `[ord(c) - ord(‘a’) for c in s]`  — convert string to numbers (#242)
+
+## 6. len() for size calculations
+`n = len(data); train_size = int(n * 0.9)`
+Trick: compute size first, then use it for slicing/looping.
+LeetCode use:
+  `n = len(nums)` at the start of every solution — avoids calling len() inside loops
+  `for i in range(len(matrix))` — matrix traversal
+  `if len(stack) == 0:` or cleaner: `if not stack:`
+
+## 7. with open() + pickle for serialize/deserialize
+`with open(‘meta.pkl’, ‘wb’) as f: pickle.dump(meta, f)`
+Trick: `with` auto-closes file. pickle saves any Python object.
+LeetCode use: the with-pattern = resource management = try-finally.
+  Same concept: open resource, use it, auto-cleanup.
+  `with` is Python’s version of RAII (C++) or try-with-resources (Java).
+
+## 8. Building a metadata dict
+`meta = {‘vocab_size’: vocab_size, ‘itos’: itos, ‘stoi’: stoi}`
+Trick: pack multiple related values into a dict for easy passing around.
+LeetCode use:
+  `state = {‘count’: 0, ‘max’: float(‘-inf’)}`  — carry state in DFS/BFS
+  Return multiple values: `return {‘min’: lo, ‘max’: hi, ‘valid’: True}`
+  But usually just use tuples: `return (lo, hi, True)`
+
+## 9. np.array().tofile() — binary write
+`np.array(encoded, dtype=np.uint16).tofile(‘train.bin’)`
+Trick: convert list to typed array and write as binary. Much faster than text.
+LeetCode use: understanding that int vs string storage matters for efficiency.
+  `np.uint16` = 2 bytes per number. 65K tokens max (enough for GPT-2’s 50257 vocab).
+
+The core theme: prepare.py teaches you the #1 LeetCode instinct — build a lookup table (dict) before you start processing. `{value: index}` maps, `sorted(set(data))` for uniques, list comprehensions for transforms, and slicing for partitions. These 5 patterns cover 60% of easy/medium LeetCode problems.
+
+#model.py — Python Coding Tricks You Can Use in LeetCode
+
+## 1. assert with modulo check (divisibility validation)
+`assert config.n_embd % config.n_head == 0`
+Trick: `a % b == 0` checks if a is evenly divisible by b. Assert it at the start.
+LeetCode use:
+  `assert len(nums) % 2 == 0`  — confirm even-length input
+  `if n % k != 0: return -1`  — #1283 Find Smallest Divisor
+  `groups = n // k`  — safe to use after asserting divisibility
+  Interview habit: validate inputs FIRST, then compute.
+
+## 2. Negative indexing and slicing from end
+`idx = idx[:, -self.config.block_size:]`  — keep only last N elements
+`logits = self.lm_head(x[:, [-1], :])`  — only the last position
+Trick: `arr[-k:]` = last k elements. `arr[-1]` = last element.
+LeetCode use: EVERYWHERE.
+  `nums[-1]`  — peek at stack top without pop (#155 Min Stack)
+  `nums[-k:]`  — #189 Rotate Array
+  `s[:-1]`  — remove last character (#844 Backspace String Compare)
+  `arr[-1] vs arr[len(arr)-1]`  — negative indexing is cleaner and faster to type
+
+## 3. The for-in loop pipeline (accumulator/reduce)
+`for block in self.transformer.h: x = block(x)`
+Trick: pass output of one step as input to the next. No index variable needed.
+LeetCode use:
+  `for op in operations: result = op(result)`  — function composition
+  `for c in s: stack.append(c) if c != '#' else stack.pop()`  — #844
+  `for num in nums: current = max(num, current + num)`  — #53 Kadane's Algorithm
+  This is the reduce/fold pattern. Feed result forward through each step.
+
+## 4. isinstance() for type-based branching
+`isinstance(module, nn.Linear)`  — check type
+`isinstance(module, (nn.Linear, nn.Embedding))`  — check multiple types
+Trick: isinstance with tuple = check if it's ANY of those types.
+LeetCode use:
+  `if isinstance(data, list): flatten(data)`  — #341 Flatten Nested List Iterator
+  `if isinstance(node, TreeNode):`  — polymorphic tree problems
+  Same logic without isinstance: `if type(x) in (int, float):`
+
+## 5. dict() constructor with keyword args (named dict)
+`self.transformer = nn.ModuleDict(dict(wte=..., wpe=..., h=..., ln_f=...))`
+Trick: `dict(key1=val1, key2=val2)` is cleaner than `{'key1': val1, 'key2': val2}` for string keys.
+LeetCode use:
+  `dirs = dict(U=(-1,0), D=(1,0), L=(0,-1), R=(0,1))`  — #489 Robot Room Cleaner
+  `ops = dict(add=lambda a,b: a+b, sub=lambda a,b: a-b)`  — operator mapping
+  Cleaner than if-elif chains for direction/operation mapping.
+
+## 6. List comprehension with unpacking and filtering
+`decay_params = [p for n, p in named_params if p.dim() >= 2]`
+`nodecay_params = [p for n, p in named_params if p.dim() < 2]`
+Trick: unpack tuple AND filter in one comprehension. Two lists from one pass.
+LeetCode use:
+  `evens = [x for x in nums if x % 2 == 0]`  — partition (#905)
+  `positives = [x for x in nums if x > 0]`  — filter positives
+  `edges = [(u,v) for u,v,w in graph if w < threshold]`  — filter edges by weight
+  Two-group partition: make two comprehensions, one with `if cond`, one with `if not cond`.
+
+## 7. The @dataclass pattern (config/state container)
+```
+@dataclass
+class GPTConfig:
+    block_size: int = 1024
+    vocab_size: int = 50304
+```
+Trick: dataclass auto-generates __init__, __repr__, __eq__. No boilerplate.
+LeetCode use: rarely needed in LeetCode, but useful in interviews for clean design.
+  Instead of dataclass, in LeetCode you'd use: `namedtuple('Point', ['x', 'y'])`
+  Or just tuples: `(x, y, cost)` pushed into a heap.
+
+## 8. **kwargs unpacking (dict to function args)
+`GPTConfig(**model_args)` — same as GPTConfig(n_layer=12, n_head=12, ...)
+Trick: unpack a dictionary as keyword arguments to any function.
+LeetCode use:
+  `dict(**defaults, **overrides)`  — merge two dicts (overrides wins)
+  `{**dict1, **dict2}`  — merge dicts in one expression (Python 3.5+)
+  In interviews: `merged = {**base_config, **user_config}`
+
+## 9. Chaining method calls (fluent pattern)
+`q, k, v = self.c_attn(x).split(self.n_embd, dim=2)`
+Trick: call a method, immediately call another method on the result.
+LeetCode use:
+  `s.strip().split()`  — clean whitespace then split (#151 Reverse Words)
+  `sorted(nums, key=lambda x: abs(x))`  — sort by absolute value
+  `''.join(sorted(s))`  — sort string characters (#242 Valid Anagram)
+  `collections.Counter(s).most_common(k)`  — #347 Top K Frequent in one line
+
+## 10. Negative infinity masking (set impossible values)
+`att.masked_fill(mask == 0, float('-inf'))`
+Trick: set blocked positions to -infinity. After softmax, -inf becomes 0 probability.
+LeetCode use:
+  `float('-inf')` for "worst possible" initialization:
+  `max_val = float('-inf')`  — #53 Maximum Subarray
+  `dp[i] = float('inf')`  — #322 Coin Change (minimize)
+  Setting impossible states to inf/-inf so min()/max() naturally skips them.
+
+## 11. The .contiguous() concept (memory layout matters)
+`.transpose(1, 2).contiguous().view(B, T, C)`
+Trick: after transpose, data is scattered in memory. contiguous() fixes it before reshape.
+LeetCode use: understanding that array operations have hidden costs.
+  `list(reversed(arr))` creates a new list (O(n) space)
+  `arr[::-1]` also creates a new list
+  `arr.reverse()` reverses in-place (O(1) space)  — #344 Reverse String
+  Interview insight: know which operations copy vs modify in-place.
+
+## 12. top-k with heapq (find k largest/smallest)
+`torch.topk(logits, k)` — get k largest values and their indices.
+Trick in Python: use heapq for O(n log k) selection.
+LeetCode use: VERY common pattern.
+  `heapq.nlargest(k, nums)`  — #215 Kth Largest Element
+  `heapq.nsmallest(k, points, key=lambda p: p[0]**2+p[1]**2)`  — #973 K Closest Points
+  Manual heap: `heapq.heappush(heap, val)` / `heapq.heappop(heap)`
+  For top-k frequent: `Counter(nums).most_common(k)`  — #347, one-liner!
+
+## 13. The residual pattern (x = x + f(x))
+`x = x + self.attn(self.ln_1(x))`
+Trick: add the output back to the input. Transform is an UPDATE, not a REPLACEMENT.
+LeetCode use:
+  `prefix_sum[i] = prefix_sum[i-1] + nums[i]`  — #303 Range Sum Query
+  `dp[i] = dp[i] + dp[i-1]`  — accumulate in DP
+  `total += contribution`  — running sum pattern
+  Key insight: sometimes you want to MODIFY a value, not replace it entirely.
+
+## 14. self.apply(fn) — walk a tree and apply function to each node
+`self.apply(self._init_weights)` — calls fn on every sub-module.
+Trick: traverse all children and apply an operation. Tree traversal.
+LeetCode use: exact DFS/BFS pattern.
+  `def dfs(node): process(node); dfs(node.left); dfs(node.right)`  — #104 Max Depth
+  `for child in node.children: dfs(child)`  — #559 N-ary Tree Max Depth
+  Same pattern: visit every node, do something.
+
+## 15. Weight tying (two variables = same object)
+`self.transformer.wte.weight = self.lm_head.weight`  — NOT a copy, same memory!
+Trick: in Python, assignment copies the REFERENCE, not the value. `a = b` means a IS b.
+LeetCode use: understanding reference vs copy is critical.
+  `a = [1,2,3]; b = a; b.append(4)` — a is ALSO [1,2,3,4]!
+  `b = a[:]` or `b = list(a)` — THIS makes a copy
+  `b = a.copy()` or `import copy; b = copy.deepcopy(a)` — for nested structures
+  Bug source in LeetCode: forgetting that `result.append(path)` saves a reference. Use `result.append(path[:])` — #46 Permutations, #78 Subsets, #39 Combination Sum.
+
+The core theme: model.py teaches you clean Python patterns for structuring complex code — negative indexing, list comprehension with filtering, method chaining, heapq for top-k, the reduce/accumulator loop, and the critical reference-vs-copy gotcha. These make your LeetCode code shorter AND less buggy.
+
+#train.py — Python Coding Tricks You Can Use in LeetCode
+
+## 1. List comprehension with multiple conditions (one-liner filter)
+`config_keys = [k for k,v in globals().items() if not k.startswith('_') and isinstance(v, (int, float, bool, str))]`
+Trick: filter a dict by BOTH key pattern AND value type in one line.
+LeetCode use: filter valid elements from any collection.
+  `valid = [x for x in nums if x > 0 and x <= len(nums)]`  — #41 First Missing Positive
+  `words = [w for w in words if len(w) == k and w[0] == 'a']`  — filtering with multiple conditions
+  `pairs = [(k,v) for k,v in d.items() if v >= threshold]`  — #347 Top K Frequent
+
+## 2. isinstance() to check multiple types at once
+`isinstance(v, (int, float, bool, str))` — tuple of types = OR check.
+LeetCode use: checking if something is one of several types.
+  `isinstance(node, (TreeNode, ListNode))` — polymorphic tree/graph problems
+  Same logic: `if char in ('(', '[', '{'):` — #20 Valid Parentheses
+
+## 3. assert for edge case validation (interview habit)
+`assert gradient_accumulation_steps % ddp_world_size == 0`
+`assert 0 <= decay_ratio <= 1` — chained comparison!
+Trick: in interviews, start your function with asserts to show you think about edge cases.
+  `assert len(nums) > 0` or `assert k >= 1`
+  Python chained comparison: `0 <= i < n` is cleaner than `i >= 0 and i < n`
+  LeetCode: use at start of any solution to validate inputs. Shows interviewer you're careful.
+
+## 4. os.environ.get() with default — safe dictionary lookup
+`ddp = int(os.environ.get('RANK', -1)) != -1`
+Trick: dict.get(key, default) returns default instead of crashing if key missing.
+LeetCode use: counting with defaultdict or .get():
+  `count[char] = count.get(char, 0) + 1`  — #242 Valid Anagram, #1 Two Sum
+  `graph[node] = graph.get(node, []) + [neighbor]`  — building adjacency lists
+  This is the MOST useful trick. Never use `if key in dict: dict[key] += 1` when .get() works.
+
+## 5. The //= operator (integer floor division in-place)
+`gradient_accumulation_steps //= ddp_world_size`
+Trick: `a //= b` means `a = a // b` (integer division, no floats).
+LeetCode use: binary search, divide problems.
+  `mid = (left + right) // 2`  — every binary search
+  `n //= 2`  — #191 Number of 1 Bits, #231 Power of Two
+  `digit = num % 10; num //= 10`  — #7 Reverse Integer, digit extraction loop
+
+## 6. f-string formatting with commas and decimals
+`print(f"tokens per iteration will be: {tokens_per_iter:,}")`  — 491,520 with commas
+`print(f"loss {lossf:.4f}, time {dt*1000:.2f}ms, mfu {running_mfu*100:.2f}%")`
+Trick: `:,` adds commas, `:.4f` = 4 decimal places, `:.2f` = 2 decimal places.
+LeetCode use: when problems ask formatted output. Also useful for debugging.
+
+## 7. Ternary expression (one-line if-else)
+`master_process = ddp_rank == 0`  — boolean assignment from comparison
+`lr = get_lr(iter_num) if decay_lr else learning_rate`  — ternary
+`device = f'cuda:{ddp_local_rank}'`  — f-string building
+Trick: `result = value_if_true if condition else value_if_false`
+LeetCode use: everywhere.
+  `return left if left else right`  — tree problems
+  `sign = 1 if num >= 0 else -1`  — #7 Reverse Integer
+  `dp[i] = dp[i-1] + 1 if match else 0`  — DP problems
+
+## 8. Dictionary comprehension from existing keys
+`config = {k: globals()[k] for k in config_keys}`
+Trick: build a new dict by selecting specific keys from another source.
+LeetCode use:
+  `{k: v for k, v in counter.items() if v > 1}`  — find duplicates
+  `{char: i for i, char in enumerate(s)}`  — last occurrence map (#316)
+  `{k: v for k, v in sorted(d.items(), key=lambda x: x[1])}`  — sort dict by value
+
+## 9. os.path.join() and os.path.exists() — path building
+`ckpt_path = os.path.join(out_dir, 'ckpt.pt')`
+`if os.path.exists(meta_path):`
+Trick: join strings safely with separator, check before accessing.
+LeetCode use: same "check before access" pattern:
+  `if i < len(arr) and arr[i] == target:`  — bounds check before access
+  `if node and node.left:`  — null check before traversal
+  ALWAYS check before you access. This prevents IndexError and NoneType errors.
+
+## 10. The while True + break pattern (infinite loop with exit condition)
+`while True: ... if iter_num > max_iters: break`
+Trick: cleaner than `while iter_num <= max_iters` when you have complex exit logic.
+LeetCode use:
+  BFS: `while queue: node = queue.popleft()...`
+  Two pointer: `while left < right: ...`
+  Linked list: `while curr: curr = curr.next`
+  #146 LRU Cache, #155 Min Stack — loop until condition met
+
+## 11. Tracking best value with running comparison
+`if losses['val'] < best_val_loss: best_val_loss = losses['val']`
+Trick: keep a running best/min/max and update when you find better.
+LeetCode use: THIS IS EVERYWHERE.
+  `best = min(best, current)`  — #53 Maximum Subarray (Kadane's)
+  `max_profit = max(max_profit, price - min_price)`  — #121 Best Time to Buy and Sell Stock
+  `result = max(result, right - left + 1)`  — sliding window problems
+  The pattern: initialize best to worst case (float('inf') or float('-inf')), update in loop.
+
+## 12. Unpacking multiple return values
+`X, Y = get_batch('train')`
+`logits, loss = model(X, Y)`
+Trick: Python lets you unpack tuples directly into variables.
+LeetCode use:
+  `left, right = 0, len(nums) - 1`  — two pointer init
+  `carry, digit = divmod(total, 10)`  — #2 Add Two Numbers
+  `node, depth = stack.pop()`  — BFS/DFS with extra state
+  `for i, (key, val) in enumerate(items):`  — enumerate + unpack
+
+## 13. The str.startswith() check
+`if k.startswith(unwanted_prefix): state_dict[k[len(prefix):]] = state_dict.pop(k)`
+Trick: check prefix AND strip it using string slicing.
+LeetCode use:
+  `if word.startswith(prefix):`  — #208 Implement Trie, #14 Longest Common Prefix
+  `s[len(prefix):]`  — strip known prefix
+  `word.endswith(suffix)`  — suffix checking
+
+## 14. dict.pop() — remove and return
+`state_dict[new_key] = state_dict.pop(old_key)`
+Trick: rename a key in one line. pop removes old key and returns its value.
+LeetCode use:
+  `stack.pop()`  — #20 Valid Parentheses, every stack problem
+  `cache.pop(oldest_key)`  — #146 LRU Cache
+  `count[char] -= 1; if count[char] == 0: count.pop(char)`  — sliding window frequency
+
+## 15. getattr() — dynamic attribute access
+`for k in ['n_layer', 'n_head', 'n_embd']: model_args[k] = getattr(model.config, k)`
+Trick: access object attributes by string name. Like dict[key] but for objects.
+LeetCode use: less common, but useful in design problems.
+  Same concept: accessing nested structures dynamically.
+
+## 16. Multiple assignment for initialization
+`iter_num = 0; best_val_loss = 1e9`
+`running_mfu = -1.0`
+Trick: initialize tracking variables before the loop. 1e9 as "infinity" for min-tracking.
+LeetCode use:
+  `min_val = float('inf')`  — standard for "find minimum"
+  `max_val = float('-inf')`  — standard for "find maximum"
+  `result = 0; count = 0`  — accumulator init
+  ALWAYS initialize your trackers before the loop.
+
+## 17. Exponential moving average (weighted running average)
+`running_mfu = 0.9 * running_mfu + 0.1 * mfu`
+Trick: give 90% weight to history, 10% to new value. Smooths noisy data.
+LeetCode use:
+  `avg = alpha * avg + (1-alpha) * new_val`  — #346 Moving Average from Data Stream
+  Simpler version: `running_sum += new - old`  — sliding window sum
+
+## 18. math.cos() and math.pi for smooth curves
+`coeff = 0.5 * (1.0 + math.cos(math.pi * decay_ratio))`
+Trick: cosine maps [0,1] → [1,-1], so `0.5*(1+cos)` maps [0,1] → [1,0]. Smooth decay.
+LeetCode use: rare, but understanding math functions helps in geometry problems.
+  `math.sqrt()`, `math.ceil()`, `math.floor()`  — #69 Sqrt(x), #29 Divide Two Integers
+  `math.log2()`  — #338 Counting Bits, power-of-2 checks
+
+The core theme: train.py teaches you Python's power tools — list comprehensions with conditions, ternary expressions, dict.get(), tuple unpacking, running min/max tracking, and the while-True-break loop. These are the patterns you type FASTEST in a 45-minute interview. Master these and your LeetCode code will be shorter, cleaner, and less buggy.

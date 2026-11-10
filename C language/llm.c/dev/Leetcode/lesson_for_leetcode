@@ -1,0 +1,657 @@
+#data_common.py — Python Coding Tricks You Can Use in LeetCode
+
+## 1. Streaming iteration with chunk processing (memory-efficient I/O)
+`for data in resp.iter_content(chunk_size=1024): file.write(data)`
+Trick: process data in fixed-size chunks instead of loading everything into memory.
+LeetCode use: THE pattern for handling large inputs or streams.
+  `for chunk in range(0, len(nums), k):`  — process k elements at a time (#189 Rotate Array)
+  `while i < len(s): process(s[i:i+window_size]); i += step`  — sliding window
+  `for i in range(0, n, batch_size): batch = data[i:i+batch_size]`  — batch processing
+  Real-world: you can't load a 10GB file into RAM. Chunk it. Same idea for streaming problems.
+
+## 2. dict.get() with default for safe header parsing
+`total = int(resp.headers.get("content-length", 0))`
+Trick: get a value from a dict, return a default if key is missing. Never crashes.
+LeetCode use: THE most important dict pattern.
+  `count[char] = count.get(char, 0) + 1`  — #242 Valid Anagram, #1 Two Sum
+  `graph[node] = graph.get(node, []) + [neighbor]`  — build adjacency list
+  `freq.get(num, 0) >= 2`  — check if element appears at least twice (#217)
+  Rule: NEVER do `dict[key]` when the key might not exist. Use `.get(key, default)`.
+
+## 3. Context manager stacking (multiple with targets)
+```
+with open(fname, "wb") as file, tqdm(
+    desc=fname, total=total,
+) as bar:
+```
+Trick: open multiple resources in one `with` statement. ALL get auto-closed.
+LeetCode use: understanding resource management.
+  `with open('in.txt') as f_in, open('out.txt', 'w') as f_out:`  — read+write
+  Same concept: multiple locks, multiple files, multiple connections.
+  In interviews: shows you understand RAII / cleanup patterns.
+
+## 4. Magic numbers for format validation (sentinel pattern)
+`header[0] = 20240520  # "I'm a valid GPT-2 file"`
+`assert(header[0] == 20240520)  # verify before processing`
+Trick: embed a known constant at the start of data. Check it before processing.
+LeetCode use: input validation and sentinel values.
+  `if nums[0] == -1: return`  — sentinel check
+  `EMPTY = -1; grid[r][c] = EMPTY`  — use named sentinels instead of bare numbers
+  `while stack[-1] != '#':`  — '#' as sentinel in stack problems (#844)
+  Interview insight: ALWAYS validate input before processing. Magic numbers catch corruption.
+
+## 5. np.zeros() for fixed-size pre-allocation
+`header = np.zeros(256, dtype=np.int32)`
+Trick: allocate a fixed-size array filled with zeros. Size known at compile time.
+LeetCode use: pre-allocate result arrays.
+  `result = [0] * n`  — fixed-size result (#238 Product of Array Except Self)
+  `dp = [0] * (n + 1)`  — DP table (#70 Climbing Stairs)
+  `count = [0] * 26`  — frequency array for lowercase letters (#242)
+  `visited = [False] * n`  — visited array for graph traversal
+  Rule: if you know the size upfront, pre-allocate. Don't append() in a loop.
+
+## 6. Packed binary format (struct-like data encoding)
+`stream.append(len(ctx_tokens)); stream.extend(ctx_tokens)`
+Trick: length-prefix your data: write the count first, then the elements.
+LeetCode use: serialization/deserialization problems.
+  `encoded = str(len(s)) + '#' + s`  — #271 Encode and Decode Strings
+  `for i, serialize: write len, then data`  — #297 Serialize Binary Tree
+  `preorder = [len(children)] + [child for c in children]`  — encode tree structure
+  Key pattern: LENGTH + DATA. The reader knows exactly how many elements to consume.
+
+## 7. Sentinel delimiter in a stream (impossible-value marker)
+`stream.append(2**16 - 1)  # 65535 = impossible token, marks boundary`
+`assert all(0 <= t < 2**16-1 for t in tokens)  # enforce: data != sentinel`
+Trick: reserve a value that can NEVER appear in valid data. Use it to mark boundaries.
+LeetCode use: boundary markers in arrays and strings.
+  `nums.append(float('inf'))`  — sentinel at end (#84 Largest Rectangle in Histogram)
+  `arr = [0] + arr + [0]`  — padding sentinels (#42 Trapping Rain Water)
+  `delimiter = '#'`  — separator in string encoding (#271)
+  `NULL = -1` or `EMPTY = float('inf')`  — impossible values in grids/matrices
+  Rule: pick a value outside the valid range. Document it. Assert the invariant.
+
+## 8. Two-pass fill (placeholder then backfill)
+```
+stream.append(0)          # placeholder for EXAMPLE_BYTES
+# ... build the example ...
+stream[1] = nbytes        # backfill with actual value
+```
+Trick: write a placeholder, compute the real value, then go back and fill it in.
+LeetCode use: problems where you need future information.
+  `next_greater = [0] * n; for i in range(n-1, -1, -1): ...`  — #496 Next Greater Element
+  `result[i] = right_max - nums[i]`  — need right-side info, compute backward
+  Same pattern: reserve space, fill later when you have the answer.
+
+## 9. Running max/min tracking during iteration
+`longest_example_bytes = max(longest_example_bytes, nbytes)`
+Trick: track the extreme value while iterating. One variable, updated each step.
+LeetCode use: EVERYWHERE. The #1 tracking pattern.
+  `max_profit = max(max_profit, price - min_price)`  — #121 Best Time to Buy Stock
+  `max_len = max(max_len, right - left + 1)`  — sliding window max (#3)
+  `min_cost = min(min_cost, dp[i])`  — DP optimization
+  Initialize: `best = float('-inf')` for max, `best = float('inf')` for min.
+
+## 10. assert for invariant checking (defensive programming)
+`assert len(ending_tokens) == 4, "expected 4 completions"`
+`assert len(datas) < 2**16, "too many examples?"`
+`assert 0 < longest_example_bytes < 2**16`
+Trick: assert your assumptions. Crash early with a clear message, not silently later.
+LeetCode use: validate before processing.
+  `assert len(nums) >= 2`  — Two Sum needs at least 2 elements
+  `assert k > 0`  — k must be positive for Top K problems
+  `assert 0 <= i < len(nums)`  — bounds check
+  Chained comparison: `0 < x < 2**16` is Python magic. Cleaner than `x > 0 and x < 2**16`.
+  Interview habit: START every solution with input validation. Shows the interviewer you're careful.
+
+## 11. extend() vs append() — flat vs nested
+`full_stream.extend(stream)`  — adds each element individually (flat)
+`full_stream.append(stream)`  — would add the list as ONE element (nested)
+Trick: extend() unpacks the iterable. append() adds it as-is.
+LeetCode use: critical difference in BFS/DFS.
+  `result.extend(subtree_result)`  — flatten results (#94 Inorder Traversal iterative)
+  `result.append(path[:])`  — add a COPY of path (#46 Permutations)
+  `queue.extend(node.children)`  — add all children to BFS queue (#429 N-ary Tree Level Order)
+  Bug source: using append when you meant extend, or vice versa.
+
+## 12. Single-write batching (collect then flush)
+```
+full_stream = []
+for data in datas:
+    stream = build_example(data)
+    full_stream.extend(stream)
+# ONE write at the end
+f.write(np.array(full_stream).tobytes())
+```
+Trick: collect all results in a list, write/process once at the end.
+LeetCode use: build result incrementally, return at end.
+  `result = []; for ...: result.append(x); return result`  — standard pattern
+  `parts = []; for word in words: parts.append(word.upper()); return ' '.join(parts)`
+  DON'T: `result += str(x)` in a loop (creates new string each time, O(n^2))
+  DO: `parts.append(str(x))` then `''.join(parts)` at end (O(n))
+
+The core theme: data_common.py teaches you binary/systems thinking applied to Python — streaming chunks instead of loading everything, sentinel values for boundaries, length-prefixed encoding, two-pass placeholder-backfill, and single-write batching. These patterns matter for serialization problems (#271, #297), large input handling, and showing interviewers you think about memory and I/O efficiency.
+
+#fineweb.py — Python Coding Tricks You Can Use in LeetCode
+
+## 1. Tuple-keyed dictionary (multi-dimensional lookup)
+```
+directories = {
+    ("classic", "10B"): ("fineweb10B", "sample-10BT"),
+    ("edu", "100B"): ("edu_fineweb100B", "sample-100BT"),
+}
+local_dir, remote_name = directories[(args.type, args.version)]
+```
+Trick: use a tuple as a dict key to replace nested if-elif chains. Clean O(1) lookup.
+LeetCode use: multi-key mapping.
+  `moves = {(0,1): 'R', (0,-1): 'L', (1,0): 'D', (-1,0): 'U'}`  — direction encoding
+  `memo = {}; memo[(i, j)] = result`  — 2D memoization (#62 Unique Paths, #64 Minimum Path Sum)
+  `seen = set(); seen.add((r, c))`  — 2D visited set (#200 Number of Islands)
+  Rule: anytime you'd write `if x == a and y == b:`, consider a tuple-keyed dict instead.
+
+## 2. argparse / config pattern (parameterized solutions)
+```
+parser.add_argument("-s", "--shard_size", type=int, default=10**8)
+```
+Trick: separate configuration from logic. Parameters at the top, algorithm below.
+LeetCode use: interview design pattern.
+  Define constants first: `MOD = 10**9 + 7; INF = float('inf')`
+  Parameterize: `def solve(nums, k, target):`  — don't hardcode values
+  Interview: shows you think about reusability and testing.
+
+## 3. Multiprocessing with pool.imap (parallel map)
+```
+nprocs = max(1, os.cpu_count() - 2)
+with mp.Pool(nprocs) as pool:
+    for result in pool.imap(process_fn, data, chunksize=16):
+```
+Trick: parallelize a pure function across multiple CPU cores. imap streams results in order.
+LeetCode use: understanding map/reduce.
+  `results = list(map(fn, items))`  — sequential map
+  `results = [fn(x) for x in items]`  — list comprehension (same thing)
+  Interview: "How would you parallelize this?" → "Each item is independent, so map across cores."
+  `chunksize=16` reduces IPC overhead — batch items to each worker.
+
+## 4. Pre-allocated buffer with offset tracking
+```
+all_tokens_np = np.empty((shard_size,), dtype=np.uint16)
+token_count = 0
+# fill:
+all_tokens_np[token_count:token_count+len(tokens)] = tokens
+token_count += len(tokens)
+```
+Trick: allocate a fixed-size array, track fill position with an index. No append/realloc.
+LeetCode use: THE systems-level array pattern.
+  `result = [0] * n; idx = 0; result[idx] = val; idx += 1`  — #88 Merge Sorted Array
+  `buffer = [None] * capacity; head = 0; tail = 0`  — #622 Design Circular Queue
+  `stack = [0] * n; top = -1; top += 1; stack[top] = val`  — array-based stack
+  Why: append() triggers dynamic resizing (amortized O(1) but cache-unfriendly). Pre-alloc is faster.
+
+## 5. Buffer fill-or-flush (bounded buffer pattern)
+```
+if token_count + len(tokens) < shard_size:
+    # fits — append to buffer
+    buffer[token_count:token_count+len(tokens)] = tokens
+    token_count += len(tokens)
+else:
+    # full — flush buffer, start new one
+    remainder = shard_size - token_count
+    buffer[token_count:] = tokens[:remainder]
+    flush(buffer)
+    buffer[0:len(tokens)-remainder] = tokens[remainder:]
+    token_count = len(tokens) - remainder
+```
+Trick: fill a fixed-size buffer until full, flush it, carry overflow to next buffer.
+LeetCode use: sliding window and buffer problems.
+  `if len(window) == k: process(window); window.popleft()`  — #239 Sliding Window Maximum
+  `if len(batch) == k: flush(batch); batch = []`  — batch processing
+  `if queue_size >= capacity: dequeue(); enqueue()`  — #622 Circular Queue
+  Key insight: split items across buffer boundaries. The document doesn't care about shard borders.
+
+## 6. Document splitting across boundaries
+```
+remainder = shard_size - token_count
+all_tokens_np[token_count:token_count+remainder] = tokens[:remainder]  # fill current
+all_tokens_np[0:len(tokens)-remainder] = tokens[remainder:]            # overflow to next
+```
+Trick: when an item doesn't fit, split it: first part fills current container, rest goes to next.
+LeetCode use: splitting and partitioning.
+  `left = nums[:k]; right = nums[k:]`  — partition at index k
+  `first_half = s[:len(s)//2]; second_half = s[len(s)//2:]`  — #234 Palindrome Linked List
+  `chunks = [arr[i:i+k] for i in range(0, len(arr), k)]`  — #1295 Find Numbers with Even Digits
+  The pattern: `item[:remainder]` and `item[remainder:]` splits at any boundary.
+
+## 7. Conditional assignment with ternary (val/train split)
+`split = "val" if shard_index == 0 else "train"`
+Trick: first item gets special treatment, rest are default.
+LeetCode use: handling edge cases for first/last element.
+  `prev = float('-inf') if i == 0 else nums[i-1]`  — boundary handling
+  `result = nums[0] if len(nums) == 1 else compute(nums)`  — base case
+  `parent = None if depth == 0 else stack[-1]`  — root node special case
+  Pattern: `special_case if condition else default_case`
+
+## 8. os.cpu_count() with safety margin
+`nprocs = max(1, os.cpu_count() - 2)`
+Trick: use available resources but leave headroom. max() ensures at least 1.
+LeetCode use: defensive bounds.
+  `max(0, value)`  — clamp to non-negative (#42 Trapping Rain Water)
+  `min(i + k, n)`  — don't exceed array bounds
+  `max(1, n // k)`  — ensure at least 1 group
+  Rule: whenever computing a resource count, clamp it with max(lower_bound, computed_value).
+
+## 9. Lambda for deferred function selection
+```
+tokenize = lambda x: None
+if args.model_desc == "gpt-2":
+    tokenize = tokenize_gpt2
+elif args.model_desc == "llama-3":
+    tokenize = tokenize_llama
+```
+Trick: assign a function to a variable based on config. Then call it uniformly.
+LeetCode use: strategy pattern.
+  `compare = (lambda a, b: a < b) if ascending else (lambda a, b: a > b)`
+  `ops = {'+': lambda a,b: a+b, '-': lambda a,b: a-b}`  — #150 Evaluate Reverse Polish Notation
+  `key_fn = lambda x: x[1]`  — custom sort key (#56 Merge Intervals)
+  Cleaner than if-else inside a loop. Decide once, execute many times.
+
+## 10. Formatted shard naming with zero-padding
+`filename = f"{name}_{split}_{shard_index:06d}.bin"`
+Trick: `:06d` pads an integer to 6 digits with leading zeros. Files sort correctly.
+LeetCode use: string formatting.
+  `f"{num:02d}"`  — "01", "02", ..., "99" (time formatting)
+  `f"{binary:08b}"`  — 8-bit binary representation (#191 Number of 1 Bits)
+  `str(num).zfill(k)`  — alternative zero-padding
+  Why it matters: "shard_9.bin" sorts AFTER "shard_10.bin" lexicographically. "shard_000009.bin" sorts correctly.
+
+## 11. EOT as document delimiter in token streams
+```
+tokens = [eot]  # start every document with end-of-text
+tokens.extend(encode(doc["text"]))
+```
+Trick: prepend a delimiter before each item in a flattened stream.
+LeetCode use: delimiter-based parsing.
+  `'#'.join(words)`  — flatten list to string (#271 Encode and Decode Strings)
+  `result = [0] + prefix_sums`  — sentinel at start for easier indexing (#303 Range Sum)
+  `arr.insert(0, sentinel)`  — boundary marker
+  Pattern: when concatenating many items into one stream, you need delimiters to find boundaries later.
+
+The core theme: fineweb.py teaches you production-scale data engineering in Python — multiprocessing for parallelism, pre-allocated buffers with offset tracking, fill-or-flush sharding, and splitting items across boundaries. These are the patterns behind sliding window (#239), circular buffer (#622), merge sorted array (#88), and serialization (#271) problems. The mindset shift: "what if my input is 10 billion elements?" changes how you write every solution.
+
+#hellaswag.py — Python Coding Tricks You Can Use in LeetCode
+
+## 1. Generator expression inside max() — find max without intermediate list
+`max_len = max(len(row) for row in tok_rows)`
+Trick: max() accepts a generator — computes len() for each row, returns largest. No list created.
+LeetCode use: EVERYWHERE for finding extremes.
+  `max(len(word) for word in words)`  — longest word (#14 Longest Common Prefix)
+  `min(abs(x) for x in nums)`  — closest to zero
+  `max(row[0] for row in intervals)`  — max start in intervals (#56 Merge Intervals)
+  `sum(1 for x in nums if x > 0)`  — count positives without building a list
+  Python built-ins that take generators: max(), min(), sum(), any(), all(), sorted().
+
+## 2. Mask-based selective computation (score only what matters)
+```
+mask = [0]*len(ctx) + [1]*len(end)   # 0=context, 1=completion
+masked_losses = losses * mask         # zero out context
+score = masked_losses.sum()           # only completion contributes
+```
+Trick: multiply by a 0/1 mask to selectively include/exclude elements.
+LeetCode use: masking and filtering.
+  `valid = [nums[i] * mask[i] for i in range(n)]`  — apply mask
+  `total = sum(val for val, flag in zip(nums, flags) if flag)`  — conditional sum
+  `result = [x if keep[i] else 0 for i, x in enumerate(arr)]`  — sparse keep
+  Same concept: attention mask in transformers = which positions can attend to which.
+
+## 3. Zero-padded batching (pad to max length)
+```
+max_len = max(len(row) for row in rows)
+padded = torch.zeros((4, max_len))
+for i, row in enumerate(rows):
+    padded[i, :len(row)] = torch.tensor(row)
+```
+Trick: items have different lengths. Pad shorter ones with zeros to fit in one rectangular array.
+LeetCode use: aligning sequences.
+  `while len(s) < max_len: s += '0'`  — right-pad with zeros (#415 Add Strings)
+  `nums + [0] * (target_len - len(nums))`  — pad array
+  `grid = [[0]*cols for _ in range(rows)]`  — fixed-size 2D grid
+  Key insight: batching requires equal sizes. Padding + masking handles variable lengths.
+
+## 4. The shift-by-1 alignment (predict next from current)
+```
+shift_logits = logits[..., :-1, :]   # all but last
+shift_tokens = tokens[..., 1:]       # all but first
+loss = cross_entropy(shift_logits, shift_tokens)
+```
+Trick: offset two sequences by 1 to align "prediction" with "target".
+LeetCode use: comparing adjacent or offset elements.
+  `for i in range(1, n): diff = nums[i] - nums[i-1]`  — adjacent difference (#1822)
+  `pairs = zip(nums[:-1], nums[1:])`  — pair each element with next
+  `all(s[i] <= s[i+1] for i in range(len(s)-1))`  — check sorted (#896 Monotonic Array)
+  `return sum(a != b for a, b in zip(s1, s2))`  — Hamming distance (#461)
+
+## 5. argmin/argmax — find index of extreme value
+```
+pred = sum_loss.argmin().item()       # index of smallest loss
+pred_norm = avg_loss.argmin().item()  # index of smallest avg loss
+```
+Trick: don't just find the min value — find WHERE it is (the index).
+LeetCode use: finding positions of extremes.
+  `nums.index(min(nums))`  — index of minimum (Python, O(2n))
+  Better: `min(range(n), key=lambda i: nums[i])`  — O(n)
+  `max(range(n), key=lambda i: nums[i])`  — index of maximum
+  `min(enumerate(nums), key=lambda x: x[1])[0]`  — enumerate version
+  #215 Kth Largest: use heapq instead of sorting for O(n log k).
+
+## 6. yield for lazy iteration (generator function)
+```
+def iterate_examples(split):
+    with open(filename, "r") as f:
+        for line in f:
+            yield json.loads(line)
+```
+Trick: yield returns one item at a time without loading ALL items into memory.
+LeetCode use: iterator design problems.
+  #173 Binary Search Tree Iterator: yield from inorder traversal
+  #284 Peeking Iterator: wrap a generator
+  #341 Flatten Nested List Iterator: recursive yield
+  `def fibonacci(): a, b = 0, 1; while True: yield a; a, b = b, a+b`
+  Key insight: yield is LAZY — processes one item, suspends, resumes on next() call.
+
+## 7. json.loads() for per-line JSON parsing (JSONL format)
+```
+for line in f:
+    example = json.loads(line)
+```
+Trick: JSONL = one JSON object per line. Parse line by line, not the whole file.
+LeetCode use: string parsing.
+  `json.loads(s)`  — parse JSON string to dict/list
+  `json.dumps(obj)`  — serialize to string
+  `eval(s)` is dangerous; json.loads() is safe for data parsing.
+  Line-by-line processing = streaming = O(1) memory for any file size.
+
+## 8. os.path.exists() for skip-if-cached
+```
+if not os.path.exists(data_filename):
+    download_file(url, filename)
+else:
+    print("already exists, skipping...")
+```
+Trick: check before doing expensive work. Don't re-download, don't re-compute.
+LeetCode use: memoization/caching.
+  `if key in memo: return memo[key]`  — #70 Climbing Stairs, #198 House Robber
+  `if (r, c) in visited: continue`  — #200 Number of Islands
+  `cache = {}; if n in cache: return cache[n]`  — any DP problem
+  Pattern: check cache FIRST, compute only if missing. Same as functools.lru_cache.
+
+## 9. Running accuracy counters (accumulate then divide)
+```
+num_correct = 0
+num_total = 0
+for example in examples:
+    num_total += 1
+    num_correct += int(pred == label)
+    accuracy = num_correct / num_total
+```
+Trick: increment counters, divide for running average. Print progress mid-loop.
+LeetCode use: counting patterns.
+  `count = sum(1 for x in nums if x == target)`  — one-liner version
+  `correct / total`  — accuracy, precision, recall
+  `running_sum / window_size`  — moving average (#346)
+  Interview: always track both numerator AND denominator separately.
+
+## 10. list concatenation for sequence building
+`tok_rows.append(ctx_tokens + end_tokens)`
+Trick: `list1 + list2` creates a new concatenated list.
+LeetCode use: building sequences.
+  `path + [node]`  — extend path in DFS (#46 Permutations, #78 Subsets)
+  `left + [root.val] + right`  — inorder traversal (#94)
+  `prefix + [nums[i]] + suffix`  — insert at position
+  CAREFUL: `+` creates a NEW list (O(n)). In tight loops, use append/extend instead.
+
+The core theme: hellaswag.py teaches you evaluation thinking — masking to score only relevant regions, shift-by-1 alignment for autoregressive comparison, argmin for finding the best choice, and generators for memory-efficient iteration. These patterns show up in sliding window (#239), monotonic array (#896), iterator design (#173), and memoization (#70, #198) problems. The evaluation mindset — "don't score context, only score predictions" — is how you think about which parts of a problem actually matter.
+
+#mmlu.py — Python Coding Tricks You Can Use in LeetCode
+
+## 1. String as lookup table — "ABCD".index() for label conversion
+`label = "ABCD".index(example["label"])   # "B" → 1`
+Trick: Python strings have .index() — finds the position of a character. Use a string as a compact mapping.
+LeetCode use: character-to-index mapping.
+  `"ABCD".index("C")`  → 2
+  `"()[]{}"` — use .index() to find matching bracket type
+  `ord(c) - ord('a')`  — classic letter-to-index (0-25), but .index() works for any custom alphabet
+  `"0123456789abcdef".index(c)`  — hex digit to value
+  Also: str.find() returns -1 instead of raising ValueError. Use .index() when missing = bug, .find() when missing = expected.
+
+## 2. os.system() for shell commands from Python
+`os.system(f"tar -xf {data_filename} -C {DATA_CACHE_DIR}")`
+Trick: run a shell command as a one-liner. Returns exit code (0 = success).
+LeetCode use: rarely, but important for systems/infra interviews.
+  os.system() — fire and forget, no output capture
+  subprocess.run() — capture stdout, stderr, return code
+  subprocess.check_output() — get output as bytes
+  Interview: "When would you use subprocess over os.system?" → When you need error handling or output capture.
+
+## 3. pd.read_csv(header=None) — reading headerless CSV
+`df = pd.read_csv(csv_path, header=None)`
+Trick: header=None tells pandas "row 0 is data, not column names." Access columns by index: df.iloc[row, col].
+LeetCode use: data parsing.
+  Without header=None: first row becomes column names (lost as data!)
+  df.iloc[0, 0] — integer location indexing (position-based)
+  df.loc[0, 'name'] — label-based indexing (needs column names)
+  df.shape[0] — number of rows. df.shape = (rows, cols) tuple.
+  Key: iloc = Integer LOCation, loc = Label-based LOCation.
+
+## 4. List comprehension with filter — file selection
+`csv_files = [f for f in os.listdir(test_dir) if f.endswith(".csv")]`
+Trick: list comprehension with condition filters items in one line.
+LeetCode use: filtering patterns.
+  `[x for x in nums if x > 0]`  — keep positives (#905 Sort Array By Parity)
+  `[word for word in words if len(word) == k]`  — filter by length
+  `[f for f in os.listdir('.') if os.path.isfile(f)]`  — files only, skip dirs
+  `[i for i, x in enumerate(nums) if x == target]`  — find all indices
+  Equivalent to: filter() + list(), but more Pythonic and readable.
+
+## 5. str() for defensive type casting
+`end_tokens = enc.encode(" " + str(end))`
+Trick: str() converts ANY type to string safely. Prevents TypeError when input type is unknown.
+LeetCode use: type-safe string operations.
+  `str(123)` → "123"
+  `str(3.14)` → "3.14"
+  `str(None)` → "None"
+  `str([1,2])` → "[1, 2]"
+  Interview pattern: "What if the input could be int or str?" → str() handles both.
+  Related: int(), float(), bool() for the reverse direction.
+
+## 6. Flatten-reshape for batch loss computation
+```
+flat = logits.view(-1, logits.size(-1))    # (B*T, C)
+losses = F.cross_entropy(flat, targets.view(-1), reduction='none')
+losses = losses.view(B, -1)                # (B, T) back to per-row
+```
+Trick: many PyTorch ops expect 2D input. Flatten 3D→2D, compute, reshape back.
+LeetCode use: matrix reshaping.
+  `view(-1)` — flatten to 1D
+  `view(rows, -1)` — reshape to rows, auto-compute cols
+  `view(-1, cols)` — reshape to cols, auto-compute rows
+  #867 Transpose Matrix, #566 Reshape the Matrix
+  Key insight: -1 means "infer this dimension from the total element count."
+
+## 7. .contiguous() for memory layout
+`shift_logits = (logits[..., :-1, :]).contiguous()`
+Trick: tensor slicing creates non-contiguous views. view() requires contiguous memory.
+LeetCode use: understanding memory layout.
+  Contiguous = elements stored in row-major order, no gaps
+  Non-contiguous = stride doesn't match shape (after transpose, slice, etc.)
+  .contiguous() copies data to fix layout. .reshape() handles both automatically.
+  Interview: "What's the difference between view() and reshape()?"
+  → view() needs contiguous data (fast, no copy). reshape() works always (may copy).
+
+## 8. int(bool) for conditional counting
+`num_correct += int(pred == label)`
+Trick: True→1, False→0. Increment counter without if/else.
+LeetCode use: counting matches.
+  `count = sum(int(a == b) for a, b in zip(s1, s2))`  — count matching chars
+  `sum(1 for x in nums if x > 0)`  — same idea, different syntax
+  `sum(x > 0 for x in nums)`  — even shorter (bool is subclass of int)
+  #461 Hamming Distance: `sum(int(a != b) for a, b in zip(bin1, bin2))`
+  All three forms are equivalent. Pick whichever reads clearest.
+
+## 9. @torch.no_grad() as function decorator
+```
+@torch.no_grad()
+def evaluate(model_type, device):
+    ...
+```
+Trick: decorator that disables gradient tracking for the entire function. Saves memory + speeds up inference.
+LeetCode use: understanding decorators.
+  @functools.lru_cache — memoize function results (#70 Climbing Stairs)
+  @functools.wraps — preserve function metadata in wrappers
+  @staticmethod, @classmethod — OOP patterns
+  Custom decorators: def timer(func): ... — measure execution time
+  Key: decorators are functions that wrap other functions. @X is syntactic sugar for func = X(func).
+
+## 10. Ellipsis (...) in tensor indexing
+`shift_logits = logits[..., :-1, :]`
+Trick: ... means "all preceding dimensions." Works for any number of leading dims.
+LeetCode use: multi-dimensional array access.
+  `a[..., 0]`  — last dimension, index 0, regardless of how many dims precede
+  `a[..., -1]`  — last element of last dimension
+  `a[:, :, 0]`  — equivalent for exactly 3D, but ... is more general
+  Why it matters: code that uses ... works for 2D, 3D, 4D... without change.
+  Interview: "Write code that works for any batch dimension" → use ... indexing.
+
+The core theme: mmlu.py reinforces the same evaluation engine as hellaswag.py (shift trick, masking, argmin) but teaches you the data-side differences — CSV parsing with pandas (iloc, header=None), tar archive extraction, defensive str() casting, and string-as-lookup-table for label conversion. The patterns here map to LeetCode's reshape (#566), string manipulation (#14), and filtering problems. The key insight: once you understand the eval engine (shift + mask + score), swapping the data source is mechanical — the architecture stays identical.
+
+#tinyshakespeare.py + tinystories.py — Python Coding Tricks You Can Use in LeetCode
+
+## 1. Strategy pattern via lambdas — swap implementations at runtime
+```
+if model_desc == "gpt-2":
+    encode = lambda s: enc.encode_ordinary(s)
+    eot = enc._special_tokens['<|endoftext|>']
+elif model_desc == "llama-3":
+    encode = lambda s: tokenizer.encode(s, ...)
+    eot = tokenizer.encode('')[0]
+```
+Trick: create functions with the same interface but different implementations. Code after the if/elif is tokenizer-agnostic.
+LeetCode use: function selection patterns.
+  `compare = (lambda a, b: a < b) if ascending else (lambda a, b: a > b)`
+  `key = (lambda x: x[0]) if sort_by_start else (lambda x: x[1])`  — sort intervals
+  `transform = str.lower if case_insensitive else (lambda x: x)`
+  This is the strategy pattern without classes — Python's duck typing makes it work.
+  #56 Merge Intervals: use lambda to sort by start or end.
+
+## 2. text.split() for document boundary detection
+`sections = text.split("\n\n")`
+Trick: split on a delimiter to break text into logical chunks.
+LeetCode use: string splitting patterns.
+  `s.split()` — split on any whitespace (words)
+  `s.split(",")` — split on comma (CSV-like)
+  `s.split("\n")` — split on newline (lines)
+  `s.split("\n\n")` — split on double newline (paragraphs/documents)
+  #151 Reverse Words in a String: split() + reverse + join
+  #468 Validate IP Address: split on "." or ":"
+  Key: split() with no args splits on any whitespace AND removes empty strings.
+
+## 3. Ternary conditional in loop — special-case last element
+`spad = s + "\n\n" if i != len(sections) - 1 else s`
+Trick: add delimiter back for all items except the last one.
+LeetCode use: join-with-separator patterns.
+  `",".join(items)` — the Pythonic way (no trailing comma)
+  `for i, x in enumerate(items): result += x + ("," if i < len(items)-1 else "")`
+  `result = [process(x) for x in items[:-1]] + [process_last(items[-1])]`
+  #6 Zigzag Conversion: different handling for first/last rows.
+
+## 4. Slice-based train/val split — power-of-2 boundary
+```
+val_tokens = tokens[:32768]       # first 2^15 tokens
+train_tokens = tokens[32768:]     # rest
+```
+Trick: slice at a fixed index to split data. Powers of 2 align with GPU hardware.
+LeetCode use: array partitioning.
+  `left, right = nums[:k], nums[k:]`  — split at index k
+  `first_half, second_half = s[:len(s)//2], s[len(s)//2:]`  — split in half
+  `chunks = [lst[i:i+n] for i in range(0, len(lst), n)]`  — split into n-sized chunks
+  #189 Rotate Array: nums[k:] + nums[:k]
+  #912 Sort Array: split in half for merge sort.
+
+## 5. random.Random(seed) — independent RNG for reproducibility
+`rng = random.Random(1337 + shard_index)`
+Trick: create a separate RNG instance with a deterministic seed. Not affected by global random state.
+LeetCode use: deterministic randomization.
+  `random.Random(seed)` — independent instance, reproducible
+  `random.seed(42)` — sets global seed (NOT safe with multiprocessing)
+  `rng.shuffle(data)` — shuffle using the independent RNG
+  `rng.randint(0, n)` — random int using independent RNG
+  Interview: "How do you ensure reproducibility in distributed systems?"
+  → Per-worker RNG with deterministic seeds based on worker ID.
+
+## 6. glob.glob() — shell-style file pattern matching
+`shard_filenames = sorted(glob.glob(os.path.join(data_dir, "*.json")))`
+Trick: find all files matching a pattern. Like `ls *.json` in bash.
+LeetCode use: pattern matching concepts.
+  `glob.glob("*.py")` — all Python files in current dir
+  `glob.glob("**/*.py", recursive=True)` — recursive search
+  `glob.glob("[0-9]*.txt")` — files starting with a digit
+  Always wrap in sorted() — glob doesn't guarantee order across platforms.
+  Related: os.listdir() returns ALL files, glob filters by pattern.
+
+## 7. ProcessPoolExecutor + as_completed — out-of-order parallel results
+```
+with ProcessPoolExecutor() as executor:
+    futures = [executor.submit(func, arg) for arg in args]
+    for future in as_completed(futures):
+        result = future.result()
+```
+Trick: submit tasks to worker processes, collect results as they finish (not in order).
+LeetCode use: understanding concurrency patterns.
+  executor.submit(func, *args) → returns Future immediately
+  future.result() → blocks until result is ready
+  as_completed(futures) → yields futures in completion order
+  Compare: Pool.imap() returns results in submission order (blocks on slow tasks)
+  Interview: "When would you use threads vs processes?"
+  → Threads for I/O-bound, processes for CPU-bound (GIL).
+
+## 8. json.load(f) vs json.loads(line) — file vs string parsing
+```
+# tinystories: entire file is one JSON array
+data = json.load(f)
+
+# hellaswag: one JSON object per line (JSONL)
+for line in f:
+    example = json.loads(line)
+```
+Trick: load() reads a file handle, loads() parses a string. Different data formats need different methods.
+LeetCode use: parsing patterns.
+  json.load(f) — entire file, returns dict or list
+  json.loads(s) — single string, returns dict or list
+  json.dump(obj, f) — write to file
+  json.dumps(obj) — serialize to string
+  #385 Mini Parser: recursive JSON-like parsing.
+
+## 9. Two-stage caching — check archive AND extracted directory
+```
+if not os.path.exists(data_filename):    # check 1: archive
+    download_file(url, data_filename)
+if not os.path.exists(data_dir):         # check 2: extracted
+    os.system(f"tar -xzf {data_filename} -C {data_dir}")
+```
+Trick: separate cache checks for download and extraction. If extraction fails, re-run without re-downloading.
+LeetCode use: multi-level caching.
+  L1 cache: fastest, smallest (extracted files)
+  L2 cache: slower, larger (compressed archive)
+  Same concept as CPU cache hierarchy: L1 → L2 → L3 → RAM → disk
+  #146 LRU Cache: multi-level eviction strategy.
+
+## 10. Shard-0-as-validation split
+```
+val_shards = [shard_filenames[0]]
+train_shards = shard_filenames[1:]
+```
+Trick: first shard = validation, rest = training. Simple, deterministic, no randomness needed.
+LeetCode use: array partitioning without extra space.
+  `first, rest = lst[0], lst[1:]`  — head/tail decomposition
+  `lst[:1]` returns a list (keeps type), lst[0] returns the element
+  Functional programming: (car, cdr) = (first, rest) in Lisp
+  #21 Merge Two Sorted Lists: process head, recurse on tail.
+
+The core theme: tinyshakespeare.py and tinystories.py teach you how the same data pipeline scales from trivial to production — strategy pattern for swappable tokenizers, text splitting for document boundaries, deterministic per-shard RNG for reproducible parallelism, and ProcessPoolExecutor for out-of-order parallel processing. These patterns connect to LeetCode's string splitting (#151), merge sort partitioning (#912), and concurrency design. The key insight: the architecture (download → tokenize → split → write_datafile) is identical at every scale; only the parallelism and sharding layers change.
